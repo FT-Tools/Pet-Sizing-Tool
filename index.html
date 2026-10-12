@@ -1,0 +1,2399 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="author" content="Meniar Trabelsi" />
+  <meta name="description" content="Automatic PET cremator fleet sizing and five-phase investment planning tool." />
+  <title>PET Sizing Tool · Automatic Fleet Recommendation</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23152f46'/%3E%3Cpath d='M18 44h28M22 38h20l-3-17H25z' fill='none' stroke='%23f6b73c' stroke-width='5' stroke-linejoin='round'/%3E%3Cpath d='M30 14c4 5 5 8 2 12 6-2 9-7 6-13' fill='none' stroke='white' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E" />
+  <style>
+:root {
+  --navy-950: #0d2234;
+  --navy-900: #153149;
+  --navy-800: #214b6b;
+  --blue-700: #266d9f;
+  --blue-500: #4c94c8;
+  --ink: #17232d;
+  --muted: #617281;
+  --line: #d9e2e8;
+  --line-strong: #b9c8d3;
+  --canvas: #f1f5f7;
+  --panel: #fff;
+  --amber: #e5a62d;
+  --amber-soft: #fff7e3;
+  --green: #247858;
+  --green-soft: #e8f4ee;
+  --red: #b34848;
+  --red-soft: #fdecec;
+  --grey-cell: #edf1f4;
+  --shadow: 0 13px 34px rgba(21, 49, 73, .075);
+  --ft110: #244f75;
+  --ft150: #4689bd;
+  --ft125: #2f8a73;
+  --ft70: #e5a62d;
+  --ft40: #8998a5;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--ink);
+  background: var(--canvas);
+  font-synthesis: none;
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --blue-700: #79c7f2;
+  --ink: #e7eef3;
+  --muted: #a9bbc8;
+  --line: #385166;
+  --line-strong: #547086;
+  --canvas: #0b1823;
+  --panel: #132636;
+  --amber-soft: #3a2f18;
+  --amber: #f3bd50;
+  --green: #69d6ad;
+  --green-soft: #173b30;
+  --red: #ff9292;
+  --red-soft: #402323;
+  --grey-cell: #263b4b;
+  --shadow: 0 13px 34px rgba(0, 0, 0, .25);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { min-width: 320px; background: var(--canvas); }
+body { margin: 0; min-width: 320px; background: var(--canvas); }
+button, input, select { font: inherit; }
+button, select { cursor: pointer; }
+.app-shell { min-height: 100vh; }
+
+.topbar {
+  min-height: 72px;
+  padding: 12px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  color: #fff;
+  background: linear-gradient(105deg, var(--navy-950), var(--navy-900) 64%, #20506e);
+  box-shadow: 0 4px 20px rgba(10, 30, 44, .22);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand-mark {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, .34);
+  border-radius: 11px;
+  color: #f5b941;
+  font-weight: 850;
+  letter-spacing: -.04em;
+  background: rgba(255, 255, 255, .03);
+}
+.brand strong { display: block; font-size: 1.04rem; letter-spacing: .01em; }
+.brand span { display: block; margin-top: 2px; color: #c7d5df; font-size: .8rem; }
+.header-actions { display: flex; align-items: center; gap: 9px; }
+.language-control {
+  width: auto;
+  min-width: 118px;
+  border-color: rgba(255, 255, 255, .38);
+  background: rgba(255, 255, 255, .08);
+  color: #fff;
+}
+.language-control option { color: #17232d; background: #fff; }
+
+.button {
+  border-radius: 8px;
+  padding: 9px 13px;
+  min-height: 39px;
+  border: 1px solid transparent;
+  font-size: .86rem;
+  font-weight: 760;
+}
+.button-secondary { background: #fff; color: var(--navy-900); }
+.button-outline { background: transparent; border-color: rgba(255, 255, 255, .38); color: #fff; }
+.theme-toggle {
+  width: 40px;
+  min-width: 40px;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+}
+.theme-toggle svg { width: 20px; height: 20px; display: block; }
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.button:hover { filter: brightness(.97); }
+.button:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 3px solid rgba(77, 145, 198, .34);
+  outline-offset: 2px;
+}
+
+main { max-width: 1580px; margin: 0 auto; padding: 22px 24px 48px; }
+.method-strip {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 18px;
+  padding: 12px 15px;
+  border: 1px solid #e7c97c;
+  border-radius: 10px;
+  background: var(--amber-soft);
+  color: #685018;
+  font-size: .88rem;
+  line-height: 1.45;
+}
+.method-mark { width: 9px; height: 9px; margin-top: 5px; flex: 0 0 auto; border-radius: 50%; background: var(--amber); }
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(760px, 1.62fr) minmax(370px, .72fr);
+  gap: 18px;
+  align-items: start;
+}
+.panel {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, #fff, #fafcfd);
+}
+.panel-heading h1, .panel-heading h2, .panel-heading h3 { margin: 0; color: var(--navy-950); }
+.panel-heading h1 { font-size: 1.2rem; }
+.panel-heading h2 { font-size: 1.08rem; }
+.panel-heading p:not(.eyebrow) { margin: 5px 0 0; color: var(--muted); font-size: .84rem; line-height: 1.42; }
+.compact-heading { padding-top: 15px; padding-bottom: 15px; }
+.eyebrow {
+  margin: 0 0 5px;
+  color: var(--blue-700);
+  font-size: .7rem;
+  line-height: 1;
+  font-weight: 850;
+  letter-spacing: .085em;
+  text-transform: uppercase;
+}
+
+.input-key { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px 13px; color: var(--muted); font-size: .74rem; font-weight: 720; }
+.input-key span { display: inline-flex; align-items: center; gap: 5px; }
+.input-key i { width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--line-strong); }
+.input-key .amber-key { background: #fff8e6; border-color: #dfbd62; }
+.input-key .grey-key { background: var(--grey-cell); }
+.input-panel-tools { display: grid; justify-items: end; gap: 11px; }
+.client-field { display: grid; gap: 5px; min-width: 230px; }
+.client-field span { color: var(--muted); font-size: .7rem; font-weight: 850; letter-spacing: .05em; text-transform: uppercase; }
+.client-field input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--ink);
+}
+
+.input-scroll, .results-scroll, .technical-scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: separate; border-spacing: 0; }
+th, td { border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); white-space: nowrap; }
+th:last-child, td:last-child { border-right: 0; }
+tbody tr:last-child th, tbody tr:last-child td { border-bottom: 0; }
+
+.input-table th, .input-table td { padding: 8px 9px; }
+.input-table thead th {
+  background: var(--navy-900);
+  color: #fff;
+  text-align: center;
+  font-size: .77rem;
+  letter-spacing: .01em;
+}
+.input-table thead th:first-child { min-width: 220px; text-align: left; }
+.input-table thead th:last-child { min-width: 110px; }
+.input-table tbody th {
+  background: #f8fafb;
+  color: #334654;
+  text-align: left;
+  font-size: .82rem;
+  font-weight: 750;
+}
+.input-table td { min-width: 112px; text-align: right; font-size: .82rem; }
+.field-label { display: inline-flex; align-items: center; gap: 6px; }
+.help-dot {
+  width: 17px;
+  height: 17px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid #9cb0be;
+  border-radius: 50%;
+  color: #526b7d;
+  font-size: .66rem;
+  font-weight: 850;
+  cursor: help;
+}
+.input-table input {
+  width: 82px;
+  padding: 7px 8px;
+  border: 1px solid #dfbd62;
+  border-radius: 7px;
+  background: #fff8e6;
+  color: var(--ink);
+  text-align: right;
+  font-weight: 760;
+}
+.ratio-editor { min-width: 92px; display: grid; justify-items: end; gap: 3px; }
+.ratio-editor label { display: inline-flex; align-items: center; gap: 4px; }
+.ratio-editor input { width: 64px; }
+.ratio-editor small { color: #6e5a25; font-weight: 800; }
+.ratio-complement { padding-right: 2px; color: #657581; font-size: .71rem; font-weight: 760; }
+.calculated-cell { background: var(--grey-cell); color: #354653; font-weight: 780; }
+.unit-cell { color: var(--muted); font-size: .76rem; }
+.ft125-only { color: #5f594c; }
+
+.recommendation-panel { min-height: 540px; }
+.recommendation-toolbar {
+  padding: 15px 17px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  border-bottom: 1px solid var(--line);
+  background: #f8fbfd;
+}
+.recommendation-toolbar > div:first-child > span { display: block; max-width: 210px; color: var(--muted); font-size: .75rem; line-height: 1.35; }
+.view-control { width: 155px; flex: 0 0 auto; }
+.view-control label { display: block; margin-bottom: 5px; color: var(--muted); font-size: .68rem; font-weight: 850; text-transform: uppercase; letter-spacing: .06em; }
+select {
+  width: 100%;
+  min-height: 39px;
+  padding: 8px 32px 8px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font-weight: 750;
+}
+.recommendation-heading { padding: 18px 18px 14px; border-bottom: 1px solid var(--line); }
+.recommendation-heading h2 { margin: 0; color: var(--navy-950); font-size: 1.22rem; line-height: 1.25; }
+.recommendation-heading p { margin: 6px 0 0; color: var(--muted); font-size: .82rem; line-height: 1.45; }
+.kpi-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 14px 14px 0; }
+.kpi {
+  min-height: 108px;
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: #fbfcfd;
+}
+.kpi.good { background: var(--green-soft); border-color: #b7ddca; }
+.kpi.warning { background: var(--red-soft); border-color: #efc1c1; }
+.kpi.accent { background: #edf5fb; border-color: #bed7e8; }
+.kpi .label { color: var(--muted); font-size: .67rem; font-weight: 850; letter-spacing: .055em; text-transform: uppercase; }
+.kpi .value { margin-top: 9px; color: var(--navy-900); font-size: 1.23rem; font-weight: 860; line-height: 1.15; letter-spacing: -.02em; overflow-wrap: anywhere; }
+.kpi.good .value { color: var(--green); }
+.kpi.warning .value { color: var(--red); }
+.kpi .note { margin-top: 5px; color: var(--muted); font-size: .73rem; line-height: 1.35; }
+.decision-callout {
+  margin: 14px;
+  padding: 13px 14px;
+  border-left: 4px solid var(--amber);
+  border-radius: 7px;
+  background: var(--amber-soft);
+  color: #5f4918;
+  font-size: .85rem;
+  line-height: 1.48;
+}
+.decision-callout strong { color: #3f3212; }
+
+.plan-panel, .opening-panel { margin-top: 18px; }
+.summary-pill {
+  max-width: 390px;
+  padding: 8px 11px;
+  border: 1px solid #c6d5df;
+  border-radius: 999px;
+  background: #f4f8fa;
+  color: #385164;
+  font-size: .76rem;
+  font-weight: 800;
+  text-align: center;
+}
+.phase-cards {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(175px, 1fr));
+  gap: 10px;
+  padding: 16px 18px 0;
+  overflow-x: auto;
+}
+.phase-card {
+  min-width: 175px;
+  padding: 12px 13px;
+  border: 1px solid var(--line);
+  border-top: 4px solid var(--blue-500);
+  border-radius: 10px;
+  background: #f9fbfc;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+.phase-card:hover { border-color: #8fb8d4; transform: translateY(-1px); }
+.phase-card.active { border-color: var(--amber); border-top-color: var(--amber); background: #fff8e7; box-shadow: 0 0 0 2px rgba(229, 166, 45, .14); }
+.phase-card:focus-visible { outline: 3px solid rgba(44, 108, 155, .24); outline-offset: 2px; }
+.phase-card strong { display: block; color: var(--navy-900); font-size: .89rem; }
+.phase-card span { display: block; margin-top: 4px; color: var(--muted); font-size: .76rem; line-height: 1.35; }
+.phase-card .purchase { color: var(--red); font-weight: 820; }
+.phase-card .sufficient { color: var(--green); font-weight: 790; }
+.phase-card span b { color: #344958; }
+.machine-chips { display: flex !important; flex-wrap: wrap; gap: 4px; margin-top: 7px !important; }
+.machine-chip { display: inline-flex !important; width: auto; margin: 0 !important; padding: 3px 6px; border-radius: 999px; color: #fff !important; font-size: .67rem !important; font-weight: 850; line-height: 1.2 !important; }
+
+.visual-grid { display: grid; grid-template-columns: minmax(700px, 1.58fr) minmax(285px, .42fr); gap: 16px; padding: 16px 18px; }
+.chart-card, .rationale-card { border: 1px solid var(--line); border-radius: 11px; background: #fff; }
+.chart-card { padding: 14px 15px 9px; overflow-x: auto; }
+.chart-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; min-width: 730px; }
+.chart-heading h3, .rationale-card h3 { margin: 0; color: var(--navy-900); font-size: .95rem; }
+.chart-heading p { margin: 4px 0 0; max-width: 590px; color: var(--muted); font-size: .76rem; line-height: 1.4; }
+.legend { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 7px 11px; max-width: 430px; }
+.legend-item { display: inline-flex; align-items: center; gap: 5px; color: var(--muted); font-size: .72rem; font-weight: 720; }
+.legend-swatch { width: 10px; height: 10px; border-radius: 2px; }
+.legend-line { width: 18px; height: 0; border-top: 3px solid #ac4444; }
+#fleetChart { display: block; width: 100%; min-width: 730px; height: 350px; margin-top: 2px; }
+.chart-baseline { stroke: #9eacb6; stroke-width: 1.2; }
+.capacity-threshold { stroke: #a94747; stroke-width: 1.6; stroke-dasharray: 9 6; opacity: .94; }
+.threshold-label { fill: #8f3939; font-size: 11px; font-weight: 800; }
+.chart-axis { fill: #6a7a87; font-size: 12px; }
+.chart-axis-title { fill: #405564; font-weight: 800; }
+.phase-axis { font-weight: 750; fill: #405564; }
+.fleet-bar { stroke: rgba(255, 255, 255, .7); stroke-width: 1; }
+.fleet-bar-label { fill: #fff; font-size: 12px; font-weight: 850; paint-order: stroke; stroke: rgba(0,0,0,.22); stroke-width: 2px; }
+.bar-value { fill: #334957; font-size: 12px; font-weight: 850; }
+.workload-line { fill: none; stroke: #ad4646; stroke-width: 3.3; stroke-linejoin: round; stroke-linecap: round; }
+.workload-point { fill: #fff; stroke: #ad4646; stroke-width: 3; }
+.workload-label-bg { fill: #fff; stroke: #e2baba; stroke-width: .8; }
+.workload-label { fill: #9c4040; font-size: 11px; font-weight: 850; }
+.rationale-card { padding: 17px; background: linear-gradient(180deg, #f8fbfd, #fff); }
+.rationale-card h3 { margin-top: 5px; font-size: 1.04rem; line-height: 1.32; }
+.rationale-card p:not(.eyebrow) { color: var(--muted); font-size: .83rem; line-height: 1.52; }
+.rationale-card ul { margin: 10px 0 0; padding-left: 18px; color: #334857; font-size: .81rem; line-height: 1.56; }
+
+.results-scroll { border-top: 1px solid var(--line); }
+.results-table th, .results-table td { padding: 11px 9px; text-align: right; font-size: .77rem; vertical-align: top; }
+.results-table thead th { background: var(--navy-900); color: #fff; font-size: .72rem; text-align: center; }
+.results-table th:first-child, .results-table td:first-child { text-align: left; }
+.results-table tbody tr.focus-row { background: #fff8e7; }
+.results-table .text-cell { text-align: left; white-space: normal; min-width: 140px; line-height: 1.4; }
+.results-table .opening-cell { min-width: 220px; color: #4a5f6d; }
+.status-badge {
+  display: inline-block;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: var(--green-soft);
+  color: var(--green);
+  font-size: .7rem;
+  font-weight: 850;
+  white-space: normal;
+}
+.status-badge.buy { background: var(--red-soft); color: var(--red); }
+
+.secondary-badge { padding: 6px 9px; border-radius: 999px; background: #edf3f7; color: #4d6373; font-size: .72rem; font-weight: 820; }
+.opening-content { display: grid; grid-template-columns: repeat(auto-fit, minmax(255px, 1fr)); gap: 12px; padding: 15px; }
+.opening-card { display: grid; grid-template-columns: 1fr auto; gap: 16px; padding: 14px; border: 1px solid #d5e0e7; border-radius: 10px; background: #fafcfd; }
+.opening-card h3 { margin: 6px 0 0; color: var(--navy-900); font-size: .91rem; }
+.opening-card p { margin: 4px 0 0; color: var(--muted); font-size: .76rem; }
+.phase-tag { color: var(--blue-700); font-size: .68rem; font-weight: 850; letter-spacing: .05em; text-transform: uppercase; }
+.opening-card ul { min-width: 185px; margin: 0; padding: 0; list-style: none; }
+.opening-card li { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid #e4ebef; font-size: .77rem; }
+.opening-card li:last-child { border-bottom: 0; }
+.opening-card li strong { color: #344957; }
+.opening-card li span { color: var(--red); font-weight: 850; }
+.opening-empty { display: flex; flex-direction: column; gap: 5px; padding: 4px 2px; color: #405564; font-size: .83rem; }
+.opening-empty span { color: var(--muted); }
+
+.lower-grid { display: grid; grid-template-columns: 1fr; gap: 18px; margin-top: 18px; }
+.alternative-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 15px; }
+.alternative-card { padding: 13px; border: 1px solid var(--line); border-radius: 10px; background: #fafcfd; }
+.alternative-card .alternative-rank { margin-bottom: 5px; color: var(--blue-700); font-size: .66rem; font-weight: 850; letter-spacing: .06em; text-transform: uppercase; }
+.alternative-card strong { display: block; color: var(--navy-900); font-size: .92rem; }
+.alternative-card span { display: block; margin-top: 5px; color: var(--muted); font-size: .75rem; line-height: 1.38; }
+.empty-alternatives { padding: 20px; color: var(--muted); font-size: .83rem; }
+.technical-table th, .technical-table td { padding: 9px 10px; text-align: left; font-size: .75rem; }
+.technical-table thead th { background: var(--navy-900); color: #fff; font-size: .7rem; }
+.technical-table tbody th { color: var(--navy-900); background: #f7fafb; }
+.technical-table td:last-child { white-space: normal; min-width: 240px; }
+.rules-summary { cursor: pointer; list-style: none; padding: 18px 20px; display: flex; justify-content: space-between; gap: 18px; align-items: center; }
+.rules-summary::-webkit-details-marker { display: none; }
+.rules-summary::after { content: "+"; color: var(--navy-700); font-size: 1.35rem; font-weight: 850; }
+.rules-panel[open] .rules-summary::after { content: "−"; }
+.rules-panel .technical-scroll, .rules-panel .rules-footnote { margin-left: 20px; margin-right: 20px; }
+.rules-panel .rules-footnote { margin-bottom: 18px; }
+.rules-footnote { margin: 0; padding: 10px 14px 14px; color: var(--muted); font-size: .72rem; line-height: 1.42; }
+
+footer { padding: 24px 0 0; color: #738390; font-size: .74rem; text-align: center; }
+.client-report { display: none; }
+
+:root[data-theme="dark"] .panel-heading,
+:root[data-theme="dark"] .recommendation-toolbar,
+:root[data-theme="dark"] .rationale-card { background: #172c3d; }
+:root[data-theme="dark"] .input-table tbody th,
+:root[data-theme="dark"] .phase-card,
+:root[data-theme="dark"] .chart-card,
+:root[data-theme="dark"] .kpi,
+:root[data-theme="dark"] .opening-card,
+:root[data-theme="dark"] .alternative-card { background: #162b3b; }
+:root[data-theme="dark"] .input-table input { background: #46391d; color: #fff1c7; }
+:root[data-theme="dark"] select,
+:root[data-theme="dark"] .client-field input { background: #102331; color: var(--ink); }
+:root[data-theme="dark"] .panel-heading h1,
+:root[data-theme="dark"] .panel-heading h2,
+:root[data-theme="dark"] .panel-heading h3,
+:root[data-theme="dark"] .recommendation-heading h2,
+:root[data-theme="dark"] .chart-heading h3,
+:root[data-theme="dark"] .rationale-card h3,
+:root[data-theme="dark"] .phase-card strong,
+:root[data-theme="dark"] .opening-card h3,
+:root[data-theme="dark"] .alternative-card strong,
+:root[data-theme="dark"] .kpi .value { color: #e8f2f8; }
+:root[data-theme="dark"] .chart-axis,
+:root[data-theme="dark"] .chart-axis-title,
+:root[data-theme="dark"] .phase-axis,
+:root[data-theme="dark"] .bar-value { fill: #b8c9d4; }
+:root[data-theme="dark"] .workload-point { fill: #132636; }
+:root[data-theme="dark"] .workload-label-bg { fill: #132636; }
+:root[data-theme="dark"] .summary-pill,
+:root[data-theme="dark"] .secondary-badge { background: #1c3344; color: #c4d3dd; }
+:root[data-theme="dark"] .method-strip {
+  border-color: #876a31;
+  color: #ffe7ae;
+}
+:root[data-theme="dark"] .method-strip strong { color: #fff3d3; }
+:root[data-theme="dark"] .input-table tbody th,
+:root[data-theme="dark"] .calculated-cell,
+:root[data-theme="dark"] .ratio-complement,
+:root[data-theme="dark"] .ft125-only,
+:root[data-theme="dark"] .help-dot { color: #d5e3ec; }
+:root[data-theme="dark"] .ratio-editor small { color: #ffe3a0; }
+:root[data-theme="dark"] .help-dot { border-color: #7190a6; }
+:root[data-theme="dark"] .kpi.good { background: #173b30; border-color: #356f5b; }
+:root[data-theme="dark"] .kpi.warning { background: #402323; border-color: #7f4545; }
+:root[data-theme="dark"] .kpi.accent { background: #17364b; border-color: #38627e; }
+:root[data-theme="dark"] .kpi.good .value { color: #78dfb9; }
+:root[data-theme="dark"] .kpi.warning .value { color: #ff9d9d; }
+:root[data-theme="dark"] .decision-callout {
+  border-left-color: #f3bd50;
+  color: #ffe8b2;
+}
+:root[data-theme="dark"] .decision-callout strong { color: #fff4d7; }
+:root[data-theme="dark"] .phase-card.active,
+:root[data-theme="dark"] .results-table tbody tr.focus-row { background: #332d1f; }
+:root[data-theme="dark"] .phase-card span b,
+:root[data-theme="dark"] .rationale-card ul,
+:root[data-theme="dark"] .results-table .opening-cell,
+:root[data-theme="dark"] .opening-card li strong,
+:root[data-theme="dark"] .opening-empty { color: #d7e4ec; }
+:root[data-theme="dark"] .opening-card li { border-bottom-color: #385166; }
+:root[data-theme="dark"] .threshold-label,
+:root[data-theme="dark"] .workload-label { fill: #ff9a9a; }
+:root[data-theme="dark"] .capacity-threshold,
+:root[data-theme="dark"] .workload-line { stroke: #ef7373; }
+:root[data-theme="dark"] .workload-point { stroke: #ef7373; }
+:root[data-theme="dark"] .summary-pill { border-color: #567187; }
+:root[data-theme="dark"] footer { color: #a9bbc8; }
+
+@media (max-width: 1220px) {
+  .workspace, .visual-grid, .lower-grid { grid-template-columns: 1fr; }
+  .recommendation-panel { min-height: 0; }
+  .visual-grid { padding-top: 10px; }
+  .rationale-card { min-height: 0; }
+}
+
+@media (max-width: 760px) {
+  .topbar { align-items: flex-start; padding: 12px 15px; }
+  .header-actions { flex-direction: column; align-items: stretch; }
+  .language-control { width: 100%; }
+  .button { padding: 8px 10px; min-height: 35px; font-size: .77rem; }
+  main { padding: 16px 11px 36px; }
+  .panel-heading, .recommendation-toolbar { align-items: flex-start; flex-direction: column; }
+  .input-key { justify-content: flex-start; }
+  .view-control { width: 100%; }
+  .kpi-grid { grid-template-columns: 1fr; }
+  .phase-cards { grid-template-columns: repeat(5, 185px); }
+  .alternative-list { grid-template-columns: 1fr; }
+  .summary-pill { max-width: 100%; }
+  .opening-card { grid-template-columns: 1fr; }
+}
+
+@page { size: A4 landscape; margin: 10mm; }
+
+@media print {
+  :root, body { background: #fff; color: #17232d; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .app-shell { display: none !important; }
+  .client-report { display: block; font-family: Arial, Helvetica, sans-serif; }
+  .report-page { break-after: auto; }
+  .report-page + .report-page { break-before: page; }
+  .report-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 0 0 10px;
+    border-bottom: 3px solid #153149;
+  }
+  .report-brand { display: flex; align-items: center; gap: 10px; }
+  .report-mark {
+    width: 35px;
+    height: 35px;
+    display: grid;
+    place-items: center;
+    border-radius: 8px;
+    background: #153149;
+    color: #f6b73c;
+    font-size: 13px;
+    font-weight: 850;
+  }
+  .report-brand strong { display: block; color: #153149; font-size: 15px; }
+  .report-brand span, .report-meta { display: block; margin-top: 2px; color: #617281; font-size: 9px; }
+  .report-meta { margin: 0; text-align: right; line-height: 1.45; }
+  .report-title { margin: 14px 0 4px; color: #0d2234; font-size: 23px; line-height: 1.2; }
+  .report-subtitle { margin: 0 0 12px; color: #617281; font-size: 10px; }
+  .report-summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 10px 0 12px; }
+  .report-kpi { padding: 9px 10px; border: 1px solid #cbd8e0; border-radius: 7px; background: #f6f9fb; }
+  .report-kpi span { display: block; color: #617281; font-size: 7.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+  .report-kpi strong { display: block; margin-top: 5px; color: #153149; font-size: 14px; line-height: 1.2; }
+  .report-kpi small { display: block; margin-top: 3px; color: #617281; font-size: 8px; }
+  .report-section { margin-top: 9px; break-inside: avoid; }
+  .report-section h2 { margin: 0 0 7px; color: #153149; font-size: 13px; }
+  .report-chart-wrap { height: 190px; padding: 4px 8px 0; border: 1px solid #d9e2e8; border-radius: 7px; overflow: hidden; }
+  .report-chart { display: block; width: 100%; height: 182px; }
+  .report-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  .report-table th, .report-table td {
+    padding: 4px 5px;
+    border: 1px solid #d3dde4;
+    color: #273944;
+    font-size: 7.7px;
+    line-height: 1.3;
+    white-space: normal;
+    vertical-align: top;
+  }
+  .report-table thead th { background: #153149; color: #fff; font-weight: 800; text-align: center; }
+  .report-table tbody th { background: #f2f6f8; color: #153149; text-align: left; }
+  .report-table td { text-align: center; }
+  .report-table .report-left { text-align: left; }
+  .report-callout { margin-top: 10px; padding: 8px 10px; border-left: 4px solid #e5a62d; background: #fff7e3; color: #5f4918; font-size: 9px; line-height: 1.4; }
+  .report-two-column { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .report-card { padding: 9px 10px; border: 1px solid #d5e0e7; border-radius: 7px; break-inside: avoid; }
+  .report-card h3 { margin: 0 0 5px; color: #153149; font-size: 10px; }
+  .report-card p, .report-card li { margin: 0; color: #465c6b; font-size: 8.3px; line-height: 1.45; }
+  .report-card ul { margin: 4px 0 0; padding-left: 15px; }
+  .report-note { margin-top: 12px; padding: 8px 10px; border: 1px solid #d9e2e8; border-radius: 7px; color: #536a79; font-size: 8px; line-height: 1.45; }
+  .report-footer { margin-top: 10px; padding-top: 6px; border-top: 1px solid #cbd8e0; color: #6a7a87; font-size: 7.5px; text-align: center; }
+}
+
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand" aria-label="PET Sizing Tool">
+        <div class="brand-mark" aria-hidden="true">FT</div>
+        <div>
+          <strong>PET Sizing Tool</strong>
+          <span data-i18n="brandSubtitle">Fleet sizing and investment planning</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <select class="language-control" id="languageSelect" aria-label="Language" title="Language">
+          <option value="en">English</option>
+          <option value="fr">Français</option>
+          <option value="de">Deutsch</option>
+          <option value="it">Italiano</option>
+          <option value="es">Español</option>
+        </select>
+        <button class="button button-outline theme-toggle" id="themeToggle" type="button" aria-label="Dark mode" title="Dark mode" aria-pressed="false"></button>
+        <button class="button button-secondary" id="downloadPdf" type="button" data-i18n="downloadPdf" data-i18n-title="downloadPdfTitle" title="Opens the print dialog so the report can be saved as PDF">Download client PDF</button>
+        <button class="button button-outline" id="resetInputs" type="button" data-i18n="resetInputs">Reset inputs</button>
+      </div>
+    </header>
+
+    <main>
+      <div class="method-strip" role="note">
+        <span class="method-mark" aria-hidden="true"></span>
+        <div>
+          <strong data-i18n="commercialSupport">Commercial decision support:</strong>
+          <span data-i18n="commercialSupportText">enter the client’s five-phase business plan to obtain a recommended fleet, a timed investment plan, fleet utilisation and optional opening-time alternatives.</span>
+        </div>
+      </div>
+
+      <section class="workspace" aria-label="Business plan and automatic recommendation">
+        <article class="panel input-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow" data-i18n="clientNeed">Client need</p>
+              <h1 data-i18n="businessInputs">Business plan inputs</h1>
+              <p data-i18n="inputHint">Edit the amber cells. Grey cells are calculated automatically and cannot be edited.</p>
+            </div>
+            <div class="input-panel-tools">
+              <label class="client-field" for="clientName"><span data-i18n="clientName">Client name</span><input id="clientName" type="text" maxlength="120" data-i18n-placeholder="clientNamePlaceholder" placeholder="Enter client name" /></label>
+              <div class="input-key" aria-label="Input colour key">
+                <span><i class="amber-key"></i><span data-i18n="clientInput">Client input</span></span>
+                <span><i class="grey-key"></i><span data-i18n="calculated">Calculated</span></span>
+              </div>
+            </div>
+          </div>
+          <div class="input-scroll">
+            <table class="input-table" aria-label="Five-phase business plan inputs">
+              <thead>
+                <tr>
+                  <th scope="col" data-i18n="input">Input</th>
+                  <th scope="col" data-i18n="phase1">Phase 1</th>
+                  <th scope="col" data-i18n="phase2">Phase 2</th>
+                  <th scope="col" data-i18n="phase3">Phase 3</th>
+                  <th scope="col" data-i18n="phase4">Phase 4</th>
+                  <th scope="col" data-i18n="phase5">Phase 5</th>
+                  <th scope="col" data-i18n="unit">Unit</th>
+                </tr>
+              </thead>
+              <tbody id="inputRows"></tbody>
+            </table>
+          </div>
+        </article>
+
+        <aside class="panel recommendation-panel" aria-live="polite">
+          <div class="recommendation-toolbar">
+            <div>
+              <p class="eyebrow" data-i18n="recommendation">Recommendation</p>
+              <span data-i18n="recommendationHint">Global view is shown by default. Select a phase to review its detailed recommendation.</span>
+            </div>
+            <div class="view-control">
+              <label for="focusPhase" data-i18n="focusPhase">Focus phase</label>
+              <select id="focusPhase" aria-label="Focus phase">
+                <option value="global" data-i18n="allPhases">All phases</option>
+                <option value="0" data-i18n="phase1">Phase 1</option>
+                <option value="1" data-i18n="phase2">Phase 2</option>
+                <option value="2" data-i18n="phase3">Phase 3</option>
+                <option value="3" data-i18n="phase4">Phase 4</option>
+                <option value="4" data-i18n="phase5">Phase 5</option>
+              </select>
+            </div>
+          </div>
+          <div class="recommendation-heading" id="recommendationHeading"></div>
+          <div class="kpi-grid" id="recommendationKpis"></div>
+          <div class="decision-callout" id="decisionCallout"></div>
+        </aside>
+      </section>
+
+      <section class="panel plan-panel" aria-label="Recommended five-phase plan">
+        <div class="panel-heading compact-heading">
+          <div>
+            <p class="eyebrow" data-i18n="recommendedPlan">Recommended plan</p>
+            <h2 data-i18n="fleetTimeline">Fleet and investment timeline</h2>
+            <p id="planSummary"></p>
+          </div>
+          <div class="summary-pill" id="horizonSummary"></div>
+        </div>
+
+        <div class="phase-cards" id="phaseCards" aria-label="Phase purchase timeline"></div>
+
+        <div class="visual-grid">
+          <div class="chart-card">
+            <div class="chart-heading">
+              <div>
+                <h3 data-i18n="chartTitle">Installed fleet and occupied capacity</h3>
+                <p data-i18n="chartDescription">Each colour identifies an installed model. The red line shows capacity used, its labels show fleet utilisation, and dashed levels mark the capacity of 1, 2, 3… physical units.</p>
+              </div>
+              <div class="legend" id="chartLegend"></div>
+            </div>
+            <svg id="fleetChart" viewBox="0 0 1100 360" role="img" aria-label="Installed fleet and occupied capacity across five phases"></svg>
+          </div>
+
+          <aside class="rationale-card">
+            <p class="eyebrow" data-i18n="decisionSummary">Decision summary</p>
+            <h3 id="rationaleTitle"></h3>
+            <div id="rationaleBody"></div>
+          </aside>
+        </div>
+
+        <div class="results-scroll">
+          <table class="results-table" aria-label="Detailed recommended plan by phase">
+            <thead>
+              <tr>
+                <th scope="col" data-i18n="phase">Phase</th>
+                <th scope="col" data-i18n="period">Period</th>
+                <th scope="col" data-i18n="individualPerYear">Individual/year</th>
+                <th scope="col" data-i18n="collectivePerYear">Collective/year</th>
+                <th scope="col" data-i18n="installedFleet">Installed fleet</th>
+                <th scope="col" data-i18n="purchase">Purchase</th>
+                <th scope="col" data-i18n="utilisation">Utilisation</th>
+                <th scope="col" data-i18n="spare">Spare</th>
+                <th scope="col" data-i18n="openingAlternative">Opening-time alternative</th>
+                <th scope="col" data-i18n="status">Status</th>
+              </tr>
+            </thead>
+            <tbody id="resultsBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel opening-panel" aria-label="Optional opening-time alternatives">
+        <div class="panel-heading compact-heading">
+          <div>
+            <p class="eyebrow" data-i18n="optionalScenario">Optional operating scenario</p>
+            <h2 data-i18n="openingOption">Opening Time Option</h2>
+            <p data-i18n="openingDescription">Where practical, keep the fleet already installed and increase daily opening time instead of purchasing the next unit.</p>
+          </div>
+          <span class="secondary-badge" data-i18n="secondaryOption">Secondary option</span>
+        </div>
+        <div class="opening-content" id="operatingNoteBody"></div>
+      </section>
+
+      <section class="lower-grid">
+        <article class="panel alternatives-panel">
+          <div class="panel-heading compact-heading">
+            <div>
+              <p class="eyebrow" data-i18n="sameUnitAlternatives">Same-unit alternatives</p>
+              <h2 data-i18n="otherFleets">Other feasible final fleets</h2>
+              <p data-i18n="otherFleetsDescription">Alternative technical configurations using the same minimum number of physical units, available for client discussion.</p>
+            </div>
+          </div>
+          <div class="alternative-list" id="alternativeList"></div>
+        </article>
+
+      </section>
+
+      <footer><span data-i18n="preparedBy">Prepared by</span> Meniar Trabelsi · PET Sizing Tool</footer>
+    </main>
+  </div>
+
+  <div class="client-report" id="clientReport" aria-hidden="true"></div>
+
+  <script>
+(function (root, factory) {
+  const api = factory();
+  if (typeof module === "object" && module.exports) module.exports = api;
+  if (root) root.PETOptimizer = api;
+})(typeof window !== "undefined" ? window : globalThis, function () {
+  "use strict";
+
+  const MACHINE_ORDER = ["FT110", "FT150", "FT125", "FT70", "FT40"];
+
+  const MACHINE_DATA = Object.freeze({
+    FT110: Object.freeze({
+      code: "FT110",
+      individualRate: 4,
+      collectiveKgPerHour: 45,
+      parallelIndividualPerHour: 3,
+      note: "One cell is used for collective cremation; three cells remain available at one pet per hour."
+    }),
+    FT150: Object.freeze({
+      code: "FT150",
+      individualRate: 3,
+      collectiveKgPerHour: 80,
+      parallelIndividualPerHour: 1,
+      note: "Two cells provide the 80 kg/h collective capacity; one cell remains available at one pet per hour."
+    }),
+    FT125: Object.freeze({
+      code: "FT125",
+      individualRate: 1,
+      collectiveKgPerHour: 100,
+      parallelIndividualPerHour: 0,
+      largePetsOnly: true,
+      note: "Individual operation is reserved for the client-defined share of very large pets."
+    }),
+    FT70: Object.freeze({
+      code: "FT70",
+      individualRate: 2.5,
+      collectiveKgPerHour: 65,
+      parallelIndividualPerHour: 0,
+      note: "Standard individual and collective operating modes."
+    }),
+    FT40: Object.freeze({
+      code: "FT40",
+      individualRate: 1,
+      collectiveKgPerHour: 40,
+      parallelIndividualPerHour: 0,
+      note: "Standard individual and collective operating modes."
+    })
+  });
+
+  const DEFAULT_PHASES = Object.freeze([
+    Object.freeze({ duration: 1, volume: 3000, individualShare: 50, hours: 8, days: 300, availability: 95, weight: 15, largeShare: 1 }),
+    Object.freeze({ duration: 1, volume: 4000, individualShare: 50, hours: 8, days: 300, availability: 95, weight: 15, largeShare: 1 }),
+    Object.freeze({ duration: 1, volume: 5000, individualShare: 65, hours: 8, days: 300, availability: 95, weight: 15, largeShare: 1 }),
+    Object.freeze({ duration: 1, volume: 6000, individualShare: 65, hours: 8, days: 300, availability: 95, weight: 15, largeShare: 1 }),
+    Object.freeze({ duration: 1, volume: 7000, individualShare: 65, hours: 8, days: 300, availability: 95, weight: 15, largeShare: 1 })
+  ]);
+
+  const EPSILON = 1e-7;
+
+  function clamp(value, min, max) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return min;
+    return Math.min(max, Math.max(min, number));
+  }
+
+  function normalisePhase(phase) {
+    return {
+      duration: Math.round(clamp(phase.duration, 1, 50)),
+      volume: clamp(phase.volume, 0, 1000000),
+      individualShare: clamp(phase.individualShare, 0, 100),
+      hours: clamp(phase.hours, 0.1, 24),
+      days: Math.round(clamp(phase.days, 1, 366)),
+      availability: clamp(phase.availability, 1, 100),
+      weight: clamp(phase.weight, 0.1, 500),
+      largeShare: clamp(phase.largeShare, 0, 100)
+    };
+  }
+
+  function phaseMetrics(rawPhase) {
+    const phase = normalisePhase(rawPhase);
+    const individualDemand = phase.volume * phase.individualShare / 100;
+    const collectiveDemand = phase.volume - individualDemand;
+    return {
+      ...phase,
+      individualDemand,
+      collectiveDemand,
+      effectiveHours: phase.hours * phase.days * phase.availability / 100,
+      largePetDemand: individualDemand * phase.largeShare / 100
+    };
+  }
+
+  function emptyCounts() {
+    return Object.fromEntries(MACHINE_ORDER.map((code) => [code, 0]));
+  }
+
+  function normaliseCounts(input) {
+    const counts = emptyCounts();
+    MACHINE_ORDER.forEach((code) => {
+      counts[code] = Math.max(0, Math.floor(Number(input && input[code]) || 0));
+    });
+    return counts;
+  }
+
+  function totalUnits(counts) {
+    return MACHINE_ORDER.reduce((sum, code) => sum + (counts[code] || 0), 0);
+  }
+
+  function modelCount(counts) {
+    return MACHINE_ORDER.reduce((sum, code) => sum + ((counts[code] || 0) > 0 ? 1 : 0), 0);
+  }
+
+  function signature(counts) {
+    return MACHINE_ORDER.map((code) => counts[code] || 0).join("-");
+  }
+
+  function machineRates(code, metrics) {
+    const machine = MACHINE_DATA[code];
+    return {
+      individualRate: machine.individualRate,
+      collectiveRate: machine.collectiveKgPerHour / metrics.weight,
+      parallelIndividualRate: machine.parallelIndividualPerHour
+    };
+  }
+
+  class LinearProgram {
+    constructor(A, b, c) {
+      this.m = b.length;
+      this.n = c.length;
+      this.B = new Array(this.m);
+      this.N = new Array(this.n + 1);
+      this.D = Array.from({ length: this.m + 2 }, () => new Array(this.n + 2).fill(0));
+      for (let i = 0; i < this.m; i += 1) {
+        for (let j = 0; j < this.n; j += 1) this.D[i][j] = A[i][j];
+        this.B[i] = this.n + i;
+        this.D[i][this.n] = -1;
+        this.D[i][this.n + 1] = b[i];
+      }
+      for (let j = 0; j < this.n; j += 1) {
+        this.N[j] = j;
+        this.D[this.m][j] = -c[j];
+      }
+      this.N[this.n] = -1;
+      this.D[this.m + 1][this.n] = 1;
+    }
+
+    pivot(row, column) {
+      const inverse = 1 / this.D[row][column];
+      for (let i = 0; i < this.m + 2; i += 1) {
+        if (i === row) continue;
+        for (let j = 0; j < this.n + 2; j += 1) {
+          if (j === column) continue;
+          this.D[i][j] -= this.D[row][j] * this.D[i][column] * inverse;
+        }
+      }
+      for (let j = 0; j < this.n + 2; j += 1) {
+        if (j !== column) this.D[row][j] *= inverse;
+      }
+      for (let i = 0; i < this.m + 2; i += 1) {
+        if (i !== row) this.D[i][column] *= -inverse;
+      }
+      this.D[row][column] = inverse;
+      [this.B[row], this.N[column]] = [this.N[column], this.B[row]];
+    }
+
+    simplex(phase) {
+      const objectiveRow = phase === 1 ? this.m + 1 : this.m;
+      while (true) {
+        let entering = -1;
+        for (let j = 0; j <= this.n; j += 1) {
+          if (phase === 2 && this.N[j] === -1) continue;
+          if (entering === -1 || this.D[objectiveRow][j] < this.D[objectiveRow][entering] - EPSILON ||
+            (Math.abs(this.D[objectiveRow][j] - this.D[objectiveRow][entering]) <= EPSILON && this.N[j] < this.N[entering])) entering = j;
+        }
+        if (this.D[objectiveRow][entering] >= -EPSILON) return true;
+        let leaving = -1;
+        for (let i = 0; i < this.m; i += 1) {
+          if (this.D[i][entering] <= EPSILON) continue;
+          const ratio = this.D[i][this.n + 1] / this.D[i][entering];
+          const bestRatio = leaving === -1 ? Number.POSITIVE_INFINITY : this.D[leaving][this.n + 1] / this.D[leaving][entering];
+          if (leaving === -1 || ratio < bestRatio - EPSILON ||
+            (Math.abs(ratio - bestRatio) <= EPSILON && this.B[i] < this.B[leaving])) leaving = i;
+        }
+        if (leaving === -1) return false;
+        this.pivot(leaving, entering);
+      }
+    }
+
+    solve() {
+      let row = 0;
+      for (let i = 1; i < this.m; i += 1) {
+        if (this.D[i][this.n + 1] < this.D[row][this.n + 1]) row = i;
+      }
+      if (this.D[row][this.n + 1] < -EPSILON) {
+        this.pivot(row, this.n);
+        if (!this.simplex(1) || this.D[this.m + 1][this.n + 1] < -EPSILON) return null;
+        if (Math.abs(this.D[this.m + 1][this.n + 1]) > EPSILON) return null;
+        const artificialRow = this.B.indexOf(-1);
+        if (artificialRow !== -1) {
+          let column = 0;
+          for (let j = 1; j <= this.n; j += 1) {
+            if (this.D[artificialRow][j] < this.D[artificialRow][column] - EPSILON ||
+              (Math.abs(this.D[artificialRow][j] - this.D[artificialRow][column]) <= EPSILON && this.N[j] < this.N[column])) column = j;
+          }
+          this.pivot(artificialRow, column);
+        }
+      }
+      if (!this.simplex(2)) return null;
+      const solution = new Array(this.n).fill(0);
+      for (let i = 0; i < this.m; i += 1) {
+        if (this.B[i] < this.n) solution[this.B[i]] = this.D[i][this.n + 1];
+      }
+      return { solution, value: this.D[this.m][this.n + 1] };
+    }
+  }
+
+  function allocateFleet(rawCounts, rawPhase) {
+    const counts = normaliseCounts(rawCounts);
+    const metrics = phaseMetrics(rawPhase);
+    const units = totalUnits(counts);
+    const allocations = Object.fromEntries(MACHINE_ORDER.map((code) => [code, { individual: 0, collective: 0, parallelIndividualPets: 0 }]));
+
+    if (metrics.volume <= EPSILON) {
+      return {
+        feasible: true,
+        counts,
+        metrics,
+        allocations,
+        usedEquivalentUnits: 0,
+        utilization: 0,
+        spareCapacity: units > 0 ? 1 : 0,
+        individualCapacity: 0,
+        collectiveCapacity: 0
+      };
+    }
+
+    if (units === 0 || metrics.effectiveHours <= EPSILON) {
+      return { feasible: false, counts, metrics, allocations, reason: "No available machine capacity." };
+    }
+
+    let remainingIndividual = metrics.individualDemand;
+    let fixedUsedUnits = 0;
+    const ft125Count = counts.FT125 || 0;
+    if (ft125Count > 0 && metrics.largePetDemand > EPSILON) {
+      const requiredUnits = metrics.largePetDemand / (MACHINE_DATA.FT125.individualRate * metrics.effectiveHours);
+      if (requiredUnits > ft125Count + EPSILON) {
+        return {
+          feasible: false,
+          counts,
+          metrics,
+          allocations,
+          reason: "Insufficient FT125 capacity for the client-defined very-large-pet share.",
+          individualShortfall: Math.max(0, metrics.largePetDemand - ft125Count * MACHINE_DATA.FT125.individualRate * metrics.effectiveHours)
+        };
+      }
+      allocations.FT125.individual = requiredUnits;
+      fixedUsedUnits = requiredUnits;
+      remainingIndividual -= metrics.largePetDemand;
+    }
+
+    const variables = [];
+    MACHINE_ORDER.forEach((code) => {
+      if (!counts[code]) return;
+      const rates = machineRates(code, metrics);
+      if (code !== "FT125") variables.push({ code, mode: "individual", individualRate: rates.individualRate, collectiveRate: 0 });
+      variables.push({ code, mode: "collective", individualRate: rates.parallelIndividualRate, collectiveRate: rates.collectiveRate });
+    });
+
+    if (!variables.length) return { feasible: false, counts, metrics, allocations, reason: "No available operating mode." };
+
+    const A = [];
+    const b = [];
+    const individualTargetRate = Math.max(0, remainingIndividual) / metrics.effectiveHours;
+    const collectiveTargetRate = metrics.collectiveDemand / metrics.effectiveHours;
+    A.push(variables.map((variable) => -variable.individualRate));
+    b.push(-individualTargetRate);
+    A.push(variables.map((variable) => -variable.collectiveRate));
+    b.push(-collectiveTargetRate);
+
+    MACHINE_ORDER.forEach((code) => {
+      if (!counts[code]) return;
+      A.push(variables.map((variable) => variable.code === code ? 1 : 0));
+      const reserved = code === "FT125" ? fixedUsedUnits : 0;
+      b.push(Math.max(0, counts[code] - reserved));
+    });
+
+    const result = new LinearProgram(A, b, variables.map(() => -1)).solve();
+    if (!result) {
+      return {
+        feasible: false,
+        counts,
+        metrics,
+        allocations,
+        reason: "The installed fleet cannot cover both individual and collective demand within the available time."
+      };
+    }
+
+    result.solution.forEach((rawValue, index) => {
+      const value = Math.max(0, rawValue);
+      const variable = variables[index];
+      allocations[variable.code][variable.mode] += value;
+      if (variable.mode === "collective" && variable.individualRate > 0) {
+        allocations[variable.code].parallelIndividualPets += value * variable.individualRate * metrics.effectiveHours;
+      }
+    });
+
+    let usedEquivalentUnits = fixedUsedUnits;
+    let individualCapacity = fixedUsedUnits * MACHINE_DATA.FT125.individualRate * metrics.effectiveHours;
+    let collectiveCapacity = 0;
+    variables.forEach((variable, index) => {
+      const value = Math.max(0, result.solution[index]);
+      usedEquivalentUnits += value;
+      individualCapacity += value * variable.individualRate * metrics.effectiveHours;
+      collectiveCapacity += value * variable.collectiveRate * metrics.effectiveHours;
+    });
+
+    if (individualCapacity + 1e-4 < metrics.individualDemand || collectiveCapacity + 1e-4 < metrics.collectiveDemand) {
+      return { feasible: false, counts, metrics, allocations, reason: "Numerical capacity check failed." };
+    }
+
+    const utilization = units > 0 ? usedEquivalentUnits / units : 0;
+    return {
+      feasible: true,
+      counts,
+      metrics,
+      allocations,
+      usedEquivalentUnits,
+      utilization,
+      spareCapacity: Math.max(0, 1 - utilization),
+      individualCapacity,
+      collectiveCapacity
+    };
+  }
+
+  function generateCompositions(total, dimensions) {
+    const output = [];
+    const current = new Array(dimensions).fill(0);
+    function walk(index, remaining) {
+      if (index === dimensions - 1) {
+        current[index] = remaining;
+        output.push([...current]);
+        return;
+      }
+      for (let value = 0; value <= remaining; value += 1) {
+        current[index] = value;
+        walk(index + 1, remaining - value);
+      }
+    }
+    walk(0, total);
+    return output;
+  }
+
+  function arrayToCounts(values) {
+    return Object.fromEntries(MACHINE_ORDER.map((code, index) => [code, values[index] || 0]));
+  }
+
+  function countsToArray(counts) {
+    return MACHINE_ORDER.map((code) => counts[code] || 0);
+  }
+
+  function isSubset(previous, next) {
+    return MACHINE_ORDER.every((code) => (previous[code] || 0) <= (next[code] || 0));
+  }
+
+  function generateSubfleets(finalCounts) {
+    const limits = countsToArray(finalCounts);
+    const output = [];
+    const current = new Array(limits.length).fill(0);
+    function walk(index) {
+      if (index === limits.length) {
+        output.push(arrayToCounts(current));
+        return;
+      }
+      for (let value = 0; value <= limits[index]; value += 1) {
+        current[index] = value;
+        walk(index + 1);
+      }
+    }
+    walk(0);
+    return output;
+  }
+
+  function pathForFinalFleet(finalCounts, phases) {
+    const subfleets = generateSubfleets(finalCounts);
+    const feasibleByPhase = phases.map((phase, index) => {
+      const fleets = subfleets.filter((counts) => {
+        if (index === phases.length - 1 && signature(counts) !== signature(finalCounts)) return false;
+        return allocateFleet(counts, phase).feasible;
+      });
+      return fleets;
+    });
+
+    if (feasibleByPhase.some((fleets) => fleets.length === 0)) return null;
+
+    let states = feasibleByPhase[0].map((counts) => ({
+      counts,
+      path: [counts],
+      machineYears: totalUnits(counts) * normalisePhase(phases[0]).duration,
+      purchaseEvents: totalUnits(counts) > 0 ? 1 : 0
+    }));
+
+    for (let phaseIndex = 1; phaseIndex < phases.length; phaseIndex += 1) {
+      const duration = normalisePhase(phases[phaseIndex]).duration;
+      const nextStates = [];
+      for (const counts of feasibleByPhase[phaseIndex]) {
+        let best = null;
+        for (const previous of states) {
+          if (!isSubset(previous.counts, counts)) continue;
+          const changed = signature(previous.counts) !== signature(counts);
+          const candidate = {
+            counts,
+            path: [...previous.path, counts],
+            machineYears: previous.machineYears + totalUnits(counts) * duration,
+            purchaseEvents: previous.purchaseEvents + (changed ? 1 : 0)
+          };
+          if (!best || candidate.machineYears < best.machineYears - EPSILON ||
+            (Math.abs(candidate.machineYears - best.machineYears) <= EPSILON && candidate.purchaseEvents < best.purchaseEvents)) {
+            best = candidate;
+          }
+        }
+        if (best) nextStates.push(best);
+      }
+      states = nextStates;
+      if (states.length === 0) return null;
+    }
+
+    states.sort((a, b) => a.machineYears - b.machineYears || a.purchaseEvents - b.purchaseEvents);
+    return states[0] || null;
+  }
+
+  function ft125DedicatedPhaseFeasible(rawCounts, rawPhase) {
+    const counts = normaliseCounts(rawCounts);
+    const metrics = phaseMetrics(rawPhase);
+    const smallUnits = (counts.FT40 || 0) + (counts.FT70 || 0);
+    if ((counts.FT125 || 0) !== 1 || smallUnits < 1 || (counts.FT110 || 0) > 0 || (counts.FT150 || 0) > 0) return false;
+
+    const ft125CollectiveHours = metrics.collectiveDemand / (MACHINE_DATA.FT125.collectiveKgPerHour / metrics.weight);
+    const ft125LargePetHours = metrics.largePetDemand / MACHINE_DATA.FT125.individualRate;
+    const ft125CanOwnCollective = ft125CollectiveHours + ft125LargePetHours <= metrics.effectiveHours + EPSILON;
+
+    const standardIndividualDemand = Math.max(0, metrics.individualDemand - metrics.largePetDemand);
+    const smallIndividualCapacity = metrics.effectiveHours * (
+      (counts.FT40 || 0) * MACHINE_DATA.FT40.individualRate +
+      (counts.FT70 || 0) * MACHINE_DATA.FT70.individualRate
+    );
+    return ft125CanOwnCollective && standardIndividualDemand <= smallIndividualCapacity + EPSILON;
+  }
+
+  function ft125BusinessPriority(path, phases) {
+    const finalCounts = path[path.length - 1];
+    if (totalUnits(finalCounts) < 2 || !ft125DedicatedPhaseFeasible(finalCounts, phases[phases.length - 1])) return false;
+    return path.every((counts, index) => (counts.FT125 || 0) === 0 || ft125DedicatedPhaseFeasible(counts, phases[index]));
+  }
+
+  function comparePlans(a, b) {
+    if (a.finalUnits !== b.finalUnits) return a.finalUnits - b.finalUnits;
+    if (Math.abs(a.machineYears - b.machineYears) > EPSILON) return a.machineYears - b.machineYears;
+    if (Boolean(a.ft125BusinessPriority) !== Boolean(b.ft125BusinessPriority)) return a.ft125BusinessPriority ? -1 : 1;
+    if (Math.abs(a.averageUtilization - b.averageUtilization) > EPSILON) return b.averageUtilization - a.averageUtilization;
+    if (Math.abs(a.maximumLoadSpread - b.maximumLoadSpread) > EPSILON) return a.maximumLoadSpread - b.maximumLoadSpread;
+    if (Math.abs(a.averageLoadSpread - b.averageLoadSpread) > EPSILON) return a.averageLoadSpread - b.averageLoadSpread;
+    if (a.distinctModels !== b.distinctModels) return a.distinctModels - b.distinctModels;
+    return a.signature.localeCompare(b.signature);
+  }
+
+  function phaseLoadBalance(allocation) {
+    const unitLoads = [];
+    MACHINE_ORDER.forEach((code) => {
+      const count = allocation.counts[code] || 0;
+      if (count <= 0) return;
+      const modelAllocation = allocation.allocations[code];
+      const averageModelLoad = clamp((modelAllocation.individual + modelAllocation.collective) / count, 0, 1);
+      for (let index = 0; index < count; index += 1) unitLoads.push(averageModelLoad);
+    });
+
+    if (unitLoads.length <= 1) {
+      const onlyLoad = unitLoads[0] || 0;
+      return { minimum: onlyLoad, maximum: onlyLoad, spread: 0 };
+    }
+
+    const minimum = Math.min(...unitLoads);
+    const maximum = Math.max(...unitLoads);
+    return { minimum, maximum, spread: maximum - minimum };
+  }
+
+  function purchasesBetween(previous, current) {
+    const purchases = emptyCounts();
+    MACHINE_ORDER.forEach((code) => {
+      purchases[code] = Math.max(0, (current[code] || 0) - (previous[code] || 0));
+    });
+    return purchases;
+  }
+
+  function earliestYearByPhase(phases) {
+    let year = 1;
+    return phases.map((phase) => {
+      const start = year;
+      year += normalisePhase(phase).duration;
+      return start;
+    });
+  }
+
+  function minimumHoursForFleet(counts, phase, ceiling) {
+    if (totalUnits(counts) === 0) return null;
+    const maxHours = ceiling || 24;
+    const highPhase = { ...phase, hours: maxHours };
+    if (!allocateFleet(counts, highPhase).feasible) return null;
+    let low = 0.05;
+    let high = maxHours;
+    for (let i = 0; i < 45; i += 1) {
+      const mid = (low + high) / 2;
+      if (allocateFleet(counts, { ...phase, hours: mid }).feasible) high = mid;
+      else low = mid;
+    }
+    return high;
+  }
+
+  function openingTimeOptions(previousCounts, phase) {
+    const previousUnits = totalUnits(previousCounts);
+    if (previousUnits === 0) return [];
+
+    const bestByUnitCount = new Map();
+    generateSubfleets(previousCounts).forEach((counts) => {
+      const units = totalUnits(counts);
+      if (units === 0) return;
+      const hours = minimumHoursForFleet(counts, phase, 24);
+      if (hours === null || hours > 24 + EPSILON) return;
+      const candidate = {
+        counts,
+        units,
+        hours,
+        allocation: allocateFleet(counts, { ...phase, hours })
+      };
+      const current = bestByUnitCount.get(units);
+      if (!current || candidate.hours < current.hours - EPSILON ||
+        (Math.abs(candidate.hours - current.hours) <= EPSILON && modelCount(candidate.counts) < modelCount(current.counts))) {
+        bestByUnitCount.set(units, candidate);
+      }
+    });
+
+    return [...bestByUnitCount.values()].sort((a, b) => b.units - a.units || a.hours - b.hours);
+  }
+
+  function enrichPlan(plan, phases) {
+    const years = earliestYearByPhase(phases);
+    const phasePlans = plan.path.map((counts, index) => {
+      const previous = index === 0 ? emptyCounts() : plan.path[index - 1];
+      const purchases = purchasesBetween(previous, counts);
+      const allocation = allocateFleet(counts, phases[index]);
+      const priorFleetHours = index > 0 && totalUnits(previous) > 0
+        ? minimumHoursForFleet(previous, phases[index])
+        : null;
+      const openingOptions = index > 0 && totalUnits(purchases) > 0
+        ? openingTimeOptions(previous, phases[index])
+        : [];
+      return {
+        phaseIndex: index,
+        startYear: years[index],
+        duration: normalisePhase(phases[index]).duration,
+        counts,
+        purchases,
+        allocation,
+        priorFleetHours,
+        openingOptions
+      };
+    });
+    return { ...plan, phasePlans };
+  }
+
+  function buildCandidate(finalCounts, phases) {
+    const path = pathForFinalFleet(finalCounts, phases);
+    if (!path) return null;
+    const allocations = path.path.map((counts, index) => allocateFleet(counts, phases[index]));
+    const durations = phases.map((phase) => normalisePhase(phase).duration);
+    const totalDuration = durations.reduce((sum, duration) => sum + duration, 0) || 1;
+    const averageUtilization = allocations.reduce((sum, item, index) => sum + item.utilization * durations[index], 0) / totalDuration;
+    const loadBalances = allocations.map(phaseLoadBalance);
+    const maximumLoadSpread = loadBalances.reduce((maximum, item) => Math.max(maximum, item.spread), 0);
+    const averageLoadSpread = loadBalances.reduce((sum, item, index) => sum + item.spread * durations[index], 0) / totalDuration;
+    return enrichPlan({
+      finalFleet: finalCounts,
+      finalUnits: totalUnits(finalCounts),
+      distinctModels: modelCount(finalCounts),
+      machineYears: path.machineYears,
+      purchaseEvents: path.purchaseEvents,
+      path: path.path,
+      ft125BusinessPriority: ft125BusinessPriority(path.path, phases),
+      averageUtilization,
+      maximumLoadSpread,
+      averageLoadSpread,
+      signature: signature(finalCounts)
+    }, phases);
+  }
+
+  function optimisePlan(rawPhases, options) {
+    const phases = rawPhases.map(normalisePhase);
+    const initialMaxUnits = Math.max(1, Number(options && options.maxUnits) || 12);
+    const absoluteMaxUnits = Math.max(initialMaxUnits, Number(options && options.absoluteMaxUnits) || 30);
+    let candidates = [];
+    let foundAt = null;
+    let testedFleetCount = 0;
+
+    for (let total = 0; total <= absoluteMaxUnits; total += 1) {
+      const combinations = generateCompositions(total, MACHINE_ORDER.length);
+      for (const values of combinations) {
+        testedFleetCount += 1;
+        const counts = arrayToCounts(values);
+        const feasibleAll = phases.every((phase) => allocateFleet(counts, phase).feasible);
+        if (!feasibleAll) continue;
+        const candidate = buildCandidate(counts, phases);
+        if (candidate) candidates.push(candidate);
+      }
+      if (candidates.length > 0) {
+        foundAt = total;
+        break;
+      }
+      if (total >= initialMaxUnits && total >= absoluteMaxUnits) break;
+    }
+
+    if (candidates.length === 0) {
+      return {
+        feasible: false,
+        phases,
+        message: `No feasible fleet found up to ${absoluteMaxUnits} units.`
+      };
+    }
+
+    candidates.sort(comparePlans);
+    const recommended = candidates[0];
+    return {
+      feasible: true,
+      phases,
+      minimumFinalUnits: foundAt,
+      recommended,
+      alternatives: candidates.slice(1, 7),
+      candidateCount: candidates.length,
+      testedFleetCount,
+      ranking: [
+        "Full coverage of individual and collective demand in every phase",
+        "Minimum number of installed units at the end of the plan",
+        "No temporary machine replacement or removal",
+        "Minimum machine-years over the five phases",
+        "FT125 + FT40/FT70 priority when one FT125 covers all collective demand and the small unit covers standard individual demand",
+        "Closest capacity fit, followed by the most balanced utilisation across installed models",
+        "Minimum number of different machine models when the previous criteria are tied"
+      ]
+    };
+  }
+
+  function countsLabel(counts, emptyLabel) {
+    const parts = MACHINE_ORDER
+      .filter((code) => (counts[code] || 0) > 0)
+      .map((code) => `${counts[code]} × ${code}`);
+    return parts.length ? parts.join(" + ") : (emptyLabel || "No units");
+  }
+
+  function allocationsLabel(allocation) {
+    const parts = [];
+    MACHINE_ORDER.forEach((code) => {
+      const count = allocation.counts[code] || 0;
+      if (!count) return;
+      const item = allocation.allocations[code];
+      const individualPercent = item.individual / count * 100;
+      const collectivePercent = item.collective / count * 100;
+      const sparePercent = Math.max(0, 100 - individualPercent - collectivePercent);
+      const parallel = item.parallelIndividualPets > .5 ? `, incl. ${Math.round(item.parallelIndividualPets).toLocaleString("en-US")} parallel I/year` : "";
+      parts.push(`${code}: ${individualPercent.toFixed(0)}% I-only / ${collectivePercent.toFixed(0)}% C mode${parallel} / ${sparePercent.toFixed(0)}% spare`);
+    });
+    return parts.join(" · ");
+  }
+
+  return {
+    MACHINE_ORDER,
+    MACHINE_DATA,
+    DEFAULT_PHASES,
+    normalisePhase,
+    phaseMetrics,
+    allocateFleet,
+    optimisePlan,
+    comparePlans,
+    phaseLoadBalance,
+    ft125DedicatedPhaseFeasible,
+    ft125BusinessPriority,
+    minimumHoursForFleet,
+    openingTimeOptions,
+    countsLabel,
+    allocationsLabel,
+    totalUnits,
+    emptyCounts
+  };
+});
+
+  </script>
+  <script>
+(function () {
+  "use strict";
+
+  const engine = window.PETOptimizer;
+  if (!engine) throw new Error("PET sizing engine is unavailable.");
+
+  const COLORS = {
+    FT110: "#244f75",
+    FT150: "#4689bd",
+    FT125: "#2f8a73",
+    FT70: "#e5a62d",
+    FT40: "#8998a5"
+  };
+
+  const LOCALES = { en: "en-GB", fr: "fr-FR", de: "de-DE", it: "it-IT", es: "es-ES" };
+  const TRANSLATIONS = {
+    en: {
+      brandSubtitle: "Fleet sizing and investment planning", darkMode: "Switch to dark mode", lightMode: "Switch to light mode", downloadPdf: "Download client PDF", downloadPdfTitle: "Opens the print dialog so the report can be saved as PDF", resetInputs: "Reset inputs",
+      commercialSupport: "Commercial decision support:", commercialSupportText: "enter the client’s five-phase business plan to obtain a recommended fleet, a timed investment plan, fleet utilisation and optional opening-time alternatives.",
+      clientNeed: "Client need", businessInputs: "Business plan inputs", inputHint: "Edit the amber cells. Grey cells are calculated automatically and cannot be edited.", clientName: "Client name", clientNamePlaceholder: "Enter client name", clientInput: "Client input", calculated: "Calculated",
+      input: "Input", phase: "Phase", phase1: "Phase 1", phase2: "Phase 2", phase3: "Phase 3", phase4: "Phase 4", phase5: "Phase 5", unit: "Unit", recommendation: "Recommendation", recommendationHint: "Global view is shown by default. Select a phase to review its detailed recommendation.", focusPhase: "Focus phase", allPhases: "All phases",
+      recommendedPlan: "Recommended plan", fleetTimeline: "Fleet and investment timeline", chartTitle: "Installed fleet and occupied capacity", chartDescription: "Each colour identifies an installed model. The red line shows capacity used, its labels show fleet utilisation, and dashed levels mark the capacity of 1, 2, 3… physical units.", decisionSummary: "Decision summary",
+      period: "Period", individualPerYear: "Individual/year", collectivePerYear: "Collective/year", installedFleet: "Installed fleet", purchase: "Purchase", utilisation: "Utilisation", spare: "Spare", openingAlternative: "Opening-time alternative", status: "Status",
+      optionalScenario: "Optional operating scenario", openingOption: "Opening Time Option", openingDescription: "Where practical, keep the fleet already installed and increase daily opening time instead of purchasing the next unit.", secondaryOption: "Secondary option", sameUnitAlternatives: "Same-unit alternatives", otherFleets: "Other feasible final fleets", otherFleetsDescription: "Alternative technical configurations using the same minimum number of physical units, available for client discussion.", preparedBy: "Prepared by",
+      durationLabel: "Phase duration", yearsUnit: "years", durationHelp: "Number of calendar years covered by the phase. Demand remains an annual value.", ratioLabel: "Individual / collective ratio", ratioUnit: "% I / % C", ratioHelp: "Client demand split. Enter the individual share; the collective share is calculated as 100% minus this value.", annualVolumeLabel: "Annual volume", petsPerYear: "pets/year", annualVolumeHelp: "Total annual cremation demand throughout the phase.", individualVolumeLabel: "Individual annual volume", individualVolumeHelp: "Annual volume multiplied by the individual share.", collectiveVolumeLabel: "Collective annual volume", collectiveVolumeHelp: "Annual volume multiplied by the collective share.", hoursLabel: "Hours per day", hoursPerDay: "hours/day", hoursShort: "h/day", hoursHelp: "Planned daily opening time for this phase.", daysLabel: "Days per year", daysPerYear: "days/year", daysHelp: "Planned annual operating days.", availabilityLabel: "Availability", percentUnit: "%", availabilityHelp: "Effective machine availability after planned and unplanned downtime. Default: 95%.", weightLabel: "Average pet weight", kgPerPet: "kg/pet", weightHelp: "Used to convert collective throughput from kg/h into pets/h.", largePetsLabel: "Very large pets share — FT125 only", percentIndividual: "% of individual", largePetsHelp: "Client-defined share of individual demand that may be processed in an FT125. It is not applied to other models.",
+      yearN: "Year {n}", yearsRange: "Years {start}–{end}", noPurchase: "No purchase", noAdditionalUnit: "No additional unit", addInY: "Add {action} in Y{year}", buyAtStart: "Buy {action} at start of Year {year}", noPurchaseRequired: "No purchase required", noUnit: "No unit", noUnits: "No units", none: "None", exactModelCombination: "Exact model combination", startOfYear: "Start of Year {year}", zeroDemandPlan: "Zero-demand plan", additionalUnitAfter: "{count} additional {unit} after the first purchase", year: "year", years: "years", physicalUnit: "physical unit", physicalUnits: "physical units", purchaseStage: "purchase stage", purchaseStages: "purchase stages", machine: "machine", machines: "machines",
+      recommendedFleetPath: "Recommended fleet and investment path for the complete five-phase business plan.", finalInstalledFleet: "Final installed fleet", initialPurchase: "Initial purchase", laterAdditions: "Later additions", phase5Utilisation: "Phase 5 utilisation", plannedCremations: "planned cremations", plannedCremationsSummary: "{years} {yearWord} · {total} planned cremations", investmentPlanText: "Investment plan: {schedule}.", futurePhasesText: "Future phases are considered from the start so every installed machine remains part of the long-term fleet.", noMachineZero: "No machine purchase is required for the current zero-demand plan.",
+      phaseDetail: "{period} · {volume} pets/year · {individual}% individual / {collective}% collective.", fleetUtilisation: "Fleet utilisation", loadAcrossInstalled: "Load across installed units", includesEarlierPurchases: "Includes earlier purchases", investmentAction: "Investment action", spareCapacity: "Spare capacity", acrossInstalledUnits: "Across installed units", fleetAndSpare: "Fleet utilisation: {utilisation} · Spare capacity: {spare}.",
+      initialInvestmentRequired: "Initial investment required.", noPreviousFleet: "There is no previous fleet to retain before Phase 1.", avoidPurchase: "Avoid {action} purchase", retainSubset: "Retain a subset of the fleet already installed:", noPurchasePlanned: "No purchase is planned in Phase {phase}.", installedFleetCovers: "The installed fleet covers the demand from approximately {hours} h/day under the current assumptions.", noPracticalHours: "No practical hours-only alternative is required.", purchaseTimelineCapacity: "The recommended purchase timeline remains the available capacity plan under the current assumptions.",
+      demand: "Demand", installed: "installed", machineUnits: "Machine units", occupiedCapacity: "Occupied capacity", fleetSufficient: "Fleet sufficient", onePathTitle: "One investment path across all five phases", stagedPathTitle: "A staged investment plan aligned with business growth", rationaleIntro: "The recommendation connects the client’s projected demand with a long-term fleet and a clear purchase timeline.", inFinalFleet: "in the final fleet.", overPlan: "over the plan.", utilisationInPhase5: "fleet utilisation in Phase 5.", eachPhaseCovered: "Each phase is covered by the installed fleet.", installedUseful: "Installed machines remain useful in every later phase.", openingShown: "Opening-time alternatives are shown when they can postpone an additional purchase.", commercialResult: "Commercial result:", commercialResultText: "a recommended configuration, the timing of each investment and the available operating margin.", ft125PriorityText: "When at least two units are required, FT125 + FT40/FT70 is prioritised if the FT125 covers all collective demand and the small unit covers standard individual demand.",
+      noEquivalent: "No equivalent alternative is available for the current business plan.", onlyMinimum: "The recommended fleet is the only configuration reaching the minimum physical unit count under the selected assumptions.", alternative: "Alternative {n}", mixedFleet: "Mixed fleet", singleModelFleet: "Single-model fleet", start: "Start", utilInPhase5: "{utilisation} utilisation in Phase 5", atMaturity: "{fleet} at maturity, with exact model purchases timed from the full business plan.", horizon: "{years}-year horizon · {total} planned cremations", reviewAssumptions: "Review the assumptions", noFeasibleFleet: "No feasible fleet could be sized within the current calculation limit.", noResultAvailable: "No result available.", reviewInputsFirst: "Review the business plan assumptions first.",
+      clientRecommendationReport: "Client recommendation report", generated: "Generated {date}", clientLabel: "Client: {name}", reportTitle: "PET fleet recommendation", reportSubtitle: "Automatic five-phase capacity and investment plan based on the client assumptions entered in the sizing tool.", recommendedFinalFleet: "Recommended final fleet", planningHorizon: "Planning horizon", phase5Spare: "Phase 5 spare capacity", underAssumptions: "Under the entered assumptions", recommendedByPhase: "Recommended plan by phase", notRequired: "Not required", assumptionsTitle: "Business plan assumptions and decision notes", assumptionsSubtitle: "The recommendation changes automatically when any of these assumptions is modified.", clientAssumptions: "Client assumptions", individualCollective: "Individual / collective", openingTime: "Opening time", operatingDaysAvailability: "Operating days / availability", averagePetWeight: "Average pet weight", optionalOpeningScenarios: "Optional opening-time scenarios", noOpeningAlternative: "No opening-time alternative required", otherMinimumFleets: "Other feasible minimum-unit fleets", noEquivalentReport: "No equivalent minimum-unit alternative is available for the current assumptions.", recommendationLogic: "Recommendation logic", logicCoverage: "Cover individual and collective demand in every phase.", logicMinUnits: "Use the minimum number of physical units.", logicKeep: "Keep every installed unit in the long-term fleet.", logicMachineYears: "Minimise machine-years and position each purchase at the required time.", logicFt125: "Prioritise FT125 + FT40/FT70 when one FT125 covers all collective demand and a small unit covers standard individual demand.", logicFit: "Then compare capacity fit and load balance; model diversity is only a final tie-breaker.", scopeTitle: "Scope of this recommendation", scopeText: "This is a technical capacity-planning recommendation based on the entered business plan and validated machine rates. CAPEX, OPEX, energy, filtration and TCO are not ranking criteria in this version.", important: "Important:", importantText: "Results are planning estimates. Final equipment selection must be confirmed against the project configuration, local operating constraints and the latest validated technical data.", unnamedClient: "Client not specified"
+    },
+    fr: {
+      brandSubtitle: "Dimensionnement du parc et planification des investissements", darkMode: "Passer en mode sombre", lightMode: "Passer en mode clair", downloadPdf: "Télécharger le PDF client", downloadPdfTitle: "Ouvre la fenêtre d’impression pour enregistrer le rapport en PDF", resetInputs: "Réinitialiser",
+      commercialSupport: "Aide à la décision commerciale :", commercialSupportText: "saisissez le business plan du client sur cinq phases pour obtenir un parc recommandé, un calendrier d’investissement, son utilisation et des alternatives en heures d’ouverture.", clientNeed: "Besoin client", businessInputs: "Données du business plan", inputHint: "Modifiez les cellules jaunes. Les cellules grises sont calculées automatiquement et sont verrouillées.", clientName: "Nom du client", clientNamePlaceholder: "Saisir le nom du client", clientInput: "Donnée client", calculated: "Calculé",
+      input: "Donnée", phase: "Phase", phase1: "Phase 1", phase2: "Phase 2", phase3: "Phase 3", phase4: "Phase 4", phase5: "Phase 5", unit: "Unité", recommendation: "Recommandation", recommendationHint: "La vue globale est affichée par défaut. Sélectionnez une phase pour consulter son détail.", focusPhase: "Phase ciblée", allPhases: "Toutes les phases", recommendedPlan: "Plan recommandé", fleetTimeline: "Parc et calendrier d’investissement", chartTitle: "Parc installé et capacité utilisée", chartDescription: "Chaque couleur correspond à un modèle installé. La ligne rouge représente la capacité utilisée et les lignes pointillées les seuils de 1, 2, 3… machines.", decisionSummary: "Synthèse de la décision",
+      period: "Période", individualPerYear: "Individuel/an", collectivePerYear: "Collectif/an", installedFleet: "Parc installé", purchase: "Achat", utilisation: "Utilisation", spare: "Marge", openingAlternative: "Alternative en heures", status: "Statut", optionalScenario: "Scénario opérationnel facultatif", openingOption: "Option heures d’ouverture", openingDescription: "Lorsque cela est possible, conservez le parc installé et augmentez les heures quotidiennes au lieu d’acheter l’unité suivante.", secondaryOption: "Option secondaire", sameUnitAlternatives: "Alternatives à nombre égal", otherFleets: "Autres parcs finaux possibles", otherFleetsDescription: "Configurations techniques alternatives utilisant le même nombre minimal de machines.", preparedBy: "Préparé par",
+      durationLabel: "Durée de la phase", yearsUnit: "années", durationHelp: "Nombre d’années civiles couvertes par la phase. Le besoin reste une valeur annuelle.", ratioLabel: "Ratio individuel / collectif", ratioUnit: "% I / % C", ratioHelp: "Répartition de la demande. Saisissez la part individuelle ; la part collective est calculée automatiquement.", annualVolumeLabel: "Volume annuel", petsPerYear: "animaux/an", annualVolumeHelp: "Demande annuelle totale de crémations pendant la phase.", individualVolumeLabel: "Volume individuel annuel", individualVolumeHelp: "Volume annuel multiplié par la part individuelle.", collectiveVolumeLabel: "Volume collectif annuel", collectiveVolumeHelp: "Volume annuel multiplié par la part collective.", hoursLabel: "Heures par jour", hoursPerDay: "heures/jour", hoursShort: "h/jour", hoursHelp: "Temps d’ouverture quotidien prévu pour cette phase.", daysLabel: "Jours par an", daysPerYear: "jours/an", daysHelp: "Nombre annuel de jours d’exploitation.", availabilityLabel: "Disponibilité", percentUnit: "%", availabilityHelp: "Disponibilité effective après les arrêts planifiés et non planifiés. Valeur par défaut : 95 %.", weightLabel: "Poids moyen d’un animal", kgPerPet: "kg/animal", weightHelp: "Utilisé pour convertir le débit collectif de kg/h en animaux/h.", largePetsLabel: "Part de très grands animaux — FT125 uniquement", percentIndividual: "% de l’individuel", largePetsHelp: "Part de la demande individuelle pouvant être traitée dans un FT125. Ne s’applique pas aux autres modèles.",
+      yearN: "Année {n}", yearsRange: "Années {start}–{end}", noPurchase: "Aucun achat", noAdditionalUnit: "Aucune unité supplémentaire", addInY: "Ajouter {action} en A{year}", buyAtStart: "Acheter {action} au début de l’année {year}", noPurchaseRequired: "Aucun achat nécessaire", noUnit: "Aucune unité", noUnits: "Aucune unité", none: "Aucun", exactModelCombination: "Combinaison exacte de modèles", startOfYear: "Début de l’année {year}", zeroDemandPlan: "Plan sans volume", additionalUnitAfter: "{count} {unit} supplémentaire après le premier achat", year: "an", years: "ans", physicalUnit: "machine physique", physicalUnits: "machines physiques", purchaseStage: "étape d’achat", purchaseStages: "étapes d’achat", machine: "machine", machines: "machines",
+      recommendedFleetPath: "Parc et calendrier d’investissement recommandés pour l’ensemble des cinq phases.", finalInstalledFleet: "Parc final installé", initialPurchase: "Achat initial", laterAdditions: "Ajouts ultérieurs", phase5Utilisation: "Utilisation en phase 5", plannedCremations: "crémations prévues", plannedCremationsSummary: "{years} {yearWord} · {total} crémations prévues", investmentPlanText: "Plan d’investissement : {schedule}.", futurePhasesText: "Les phases futures sont prises en compte dès le départ afin que chaque machine installée reste utile à long terme.", noMachineZero: "Aucun achat n’est nécessaire pour ce plan sans volume.", phaseDetail: "{period} · {volume} animaux/an · {individual} % individuel / {collective} % collectif.", fleetUtilisation: "Utilisation du parc", loadAcrossInstalled: "Charge du parc installé", includesEarlierPurchases: "Inclut les achats précédents", investmentAction: "Action d’investissement", spareCapacity: "Capacité disponible", acrossInstalledUnits: "Sur le parc installé", fleetAndSpare: "Utilisation : {utilisation} · Capacité disponible : {spare}.",
+      initialInvestmentRequired: "Investissement initial nécessaire.", noPreviousFleet: "Aucun parc précédent ne peut être conservé avant la phase 1.", avoidPurchase: "Éviter l’achat de {action}", retainSubset: "Conserver tout ou partie du parc déjà installé :", noPurchasePlanned: "Aucun achat n’est prévu en phase {phase}.", installedFleetCovers: "Le parc installé couvre la demande à partir d’environ {hours} h/jour selon les hypothèses actuelles.", noPracticalHours: "Aucune alternative pertinente uniquement en heures n’est nécessaire.", purchaseTimelineCapacity: "Le calendrier d’achat recommandé reste le plan de capacité disponible selon les hypothèses actuelles.", demand: "Besoin", installed: "installé", machineUnits: "Nombre de machines", occupiedCapacity: "Capacité utilisée", fleetSufficient: "Parc suffisant",
+      onePathTitle: "Un seul parcours d’investissement sur les cinq phases", stagedPathTitle: "Un investissement progressif aligné sur la croissance", rationaleIntro: "La recommandation relie les besoins prévisionnels du client à un parc à long terme et à un calendrier d’achat clair.", inFinalFleet: "dans le parc final.", overPlan: "sur la période.", utilisationInPhase5: "d’utilisation du parc en phase 5.", eachPhaseCovered: "Chaque phase est couverte par le parc installé.", installedUseful: "Chaque machine installée reste utile dans les phases suivantes.", openingShown: "Les alternatives en heures d’ouverture sont affichées lorsqu’elles peuvent reporter un achat.", commercialResult: "Résultat commercial :", commercialResultText: "une configuration recommandée, le calendrier de chaque investissement et la marge opérationnelle disponible.", ft125PriorityText: "À partir de deux machines, FT125 + FT40/FT70 est priorisé si le FT125 couvre tout le collectif et la petite machine l’individuel standard.",
+      noEquivalent: "Aucune alternative équivalente n’est disponible pour ce business plan.", onlyMinimum: "Le parc recommandé est la seule configuration atteignant le nombre minimal de machines avec ces hypothèses.", alternative: "Alternative {n}", mixedFleet: "Parc mixte", singleModelFleet: "Parc mono-modèle", start: "Départ", utilInPhase5: "{utilisation} d’utilisation en phase 5", atMaturity: "{fleet} à maturité, avec les achats positionnés selon l’ensemble du business plan.", horizon: "Horizon de {years} ans · {total} crémations prévues", reviewAssumptions: "Vérifier les hypothèses", noFeasibleFleet: "Aucun parc réalisable n’a été trouvé dans la limite actuelle de calcul.", noResultAvailable: "Aucun résultat disponible.", reviewInputsFirst: "Vérifiez d’abord les hypothèses du business plan.",
+      clientRecommendationReport: "Rapport de recommandation client", generated: "Généré le {date}", clientLabel: "Client : {name}", reportTitle: "Recommandation de parc PET", reportSubtitle: "Plan automatique de capacité et d’investissement sur cinq phases selon les hypothèses saisies.", recommendedFinalFleet: "Parc final recommandé", planningHorizon: "Horizon de planification", phase5Spare: "Capacité disponible en phase 5", underAssumptions: "Selon les hypothèses saisies", recommendedByPhase: "Plan recommandé par phase", notRequired: "Non nécessaire", assumptionsTitle: "Hypothèses du business plan et notes de décision", assumptionsSubtitle: "La recommandation évolue automatiquement lorsqu’une hypothèse est modifiée.", clientAssumptions: "Hypothèses client", individualCollective: "Individuel / collectif", openingTime: "Heures d’ouverture", operatingDaysAvailability: "Jours d’exploitation / disponibilité", averagePetWeight: "Poids moyen d’un animal", optionalOpeningScenarios: "Scénarios facultatifs en heures", noOpeningAlternative: "Aucune alternative en heures nécessaire", otherMinimumFleets: "Autres parcs possibles au nombre minimal", noEquivalentReport: "Aucune alternative équivalente au nombre minimal n’est disponible.", recommendationLogic: "Logique de recommandation", logicCoverage: "Couvrir la demande individuelle et collective dans chaque phase.", logicMinUnits: "Utiliser le nombre minimal de machines physiques.", logicKeep: "Conserver chaque machine installée dans le parc à long terme.", logicMachineYears: "Minimiser les machine-années et positionner chaque achat au moment nécessaire.", logicFt125: "Prioriser FT125 + FT40/FT70 lorsque le FT125 couvre tout le collectif et la petite machine l’individuel standard.", logicFit: "Comparer ensuite l’adéquation de capacité et l’équilibre des charges ; le nombre de modèles ne sert qu’au dernier départage.", scopeTitle: "Périmètre de la recommandation", scopeText: "Cette recommandation technique de capacité repose sur le business plan saisi et les capacités machines validées. CAPEX, OPEX, énergie, filtration et TCO ne sont pas des critères de classement dans cette version.", important: "Important :", importantText: "Les résultats sont des estimations de planification. Le choix final doit être confirmé selon la configuration du projet, les contraintes locales et les dernières données techniques validées.", unnamedClient: "Client non renseigné"
+    },
+    de: {},
+    it: {},
+    es: {}
+  };
+
+  function mergeLanguage(language, values) {
+    TRANSLATIONS[language] = { ...TRANSLATIONS.en, ...values };
+  }
+
+  mergeLanguage("de", {
+    hoursShort: "h/Tag", plannedCremations: "geplante Kremationen",
+    brandSubtitle: "Flottendimensionierung und Investitionsplanung", darkMode: "Zum Dunkelmodus wechseln", lightMode: "Zum Hellmodus wechseln", downloadPdf: "Kunden-PDF herunterladen", downloadPdfTitle: "Öffnet den Druckdialog zum Speichern des Berichts als PDF", resetInputs: "Eingaben zurücksetzen", commercialSupport: "Kommerzielle Entscheidungshilfe:", commercialSupportText: "Geben Sie den Fünf-Phasen-Businessplan des Kunden ein, um eine Flottenempfehlung, einen Investitionsplan, die Auslastung und optionale Betriebszeit-Alternativen zu erhalten.", clientNeed: "Kundenbedarf", businessInputs: "Businessplan-Eingaben", inputHint: "Bearbeiten Sie die gelben Felder. Graue Felder werden automatisch berechnet und sind gesperrt.", clientName: "Kundenname", clientNamePlaceholder: "Kundennamen eingeben", clientInput: "Kundeneingabe", calculated: "Berechnet",
+    input: "Eingabe", phase: "Phase", phase1: "Phase 1", phase2: "Phase 2", phase3: "Phase 3", phase4: "Phase 4", phase5: "Phase 5", unit: "Einheit", recommendation: "Empfehlung", recommendationHint: "Standardmäßig wird die Gesamtansicht angezeigt. Wählen Sie eine Phase für Details.", focusPhase: "Fokusphase", allPhases: "Alle Phasen", recommendedPlan: "Empfohlener Plan", fleetTimeline: "Flotten- und Investitionszeitplan", chartTitle: "Installierte Flotte und belegte Kapazität", chartDescription: "Jede Farbe kennzeichnet ein installiertes Modell. Die rote Linie zeigt die genutzte Kapazität; gestrichelte Linien markieren 1, 2, 3… Maschinen.", decisionSummary: "Entscheidungsübersicht", period: "Zeitraum", individualPerYear: "Einzel/Jahr", collectivePerYear: "Sammel/Jahr", installedFleet: "Installierte Flotte", purchase: "Kauf", utilisation: "Auslastung", spare: "Reserve", openingAlternative: "Betriebszeit-Alternative", status: "Status", optionalScenario: "Optionales Betriebsszenario", openingOption: "Option Betriebszeit", openingDescription: "Wenn möglich, die installierte Flotte behalten und die tägliche Betriebszeit erhöhen, statt die nächste Maschine zu kaufen.", secondaryOption: "Sekundäre Option", sameUnitAlternatives: "Alternativen mit gleicher Stückzahl", otherFleets: "Weitere mögliche Endflotten", otherFleetsDescription: "Alternative technische Konfigurationen mit derselben minimalen Anzahl physischer Maschinen.", preparedBy: "Erstellt von",
+    durationLabel: "Phasendauer", yearsUnit: "Jahre", durationHelp: "Anzahl der Kalenderjahre der Phase. Der Bedarf bleibt ein Jahreswert.", ratioLabel: "Verhältnis Einzel / Sammel", ratioUnit: "% E / % S", ratioHelp: "Bedarfsaufteilung. Geben Sie den Einzelanteil ein; der Sammelanteil wird automatisch berechnet.", annualVolumeLabel: "Jahresvolumen", petsPerYear: "Tiere/Jahr", annualVolumeHelp: "Gesamter jährlicher Kremationsbedarf in dieser Phase.", individualVolumeLabel: "Jährliches Einzelvolumen", individualVolumeHelp: "Jahresvolumen multipliziert mit dem Einzelanteil.", collectiveVolumeLabel: "Jährliches Sammelvolumen", collectiveVolumeHelp: "Jahresvolumen multipliziert mit dem Sammelanteil.", hoursLabel: "Stunden pro Tag", hoursPerDay: "Stunden/Tag", hoursHelp: "Geplante tägliche Betriebszeit in dieser Phase.", daysLabel: "Tage pro Jahr", daysPerYear: "Tage/Jahr", daysHelp: "Geplante jährliche Betriebstage.", availabilityLabel: "Verfügbarkeit", percentUnit: "%", availabilityHelp: "Effektive Verfügbarkeit nach geplanten und ungeplanten Stillständen. Standard: 95 %.", weightLabel: "Durchschnittliches Tiergewicht", kgPerPet: "kg/Tier", weightHelp: "Zur Umrechnung der Sammelleistung von kg/h in Tiere/h.", largePetsLabel: "Anteil sehr großer Tiere — nur FT125", percentIndividual: "% des Einzelvolumens", largePetsHelp: "Vom Kunden definierter Anteil des Einzelbedarfs, der in einem FT125 verarbeitet werden kann.",
+    yearN: "Jahr {n}", yearsRange: "Jahre {start}–{end}", noPurchase: "Kein Kauf", noAdditionalUnit: "Keine zusätzliche Maschine", addInY: "{action} in J{year} hinzufügen", buyAtStart: "{action} zu Beginn von Jahr {year} kaufen", noPurchaseRequired: "Kein Kauf erforderlich", noUnit: "Keine Maschine", noUnits: "Keine Maschinen", none: "Keine", exactModelCombination: "Exakte Modellkombination", startOfYear: "Beginn Jahr {year}", zeroDemandPlan: "Plan ohne Bedarf", additionalUnitAfter: "{count} zusätzliche {unit} nach dem ersten Kauf", year: "Jahr", years: "Jahre", physicalUnit: "physische Maschine", physicalUnits: "physische Maschinen", purchaseStage: "Kaufstufe", purchaseStages: "Kaufstufen", machine: "Maschine", machines: "Maschinen",
+    recommendedFleetPath: "Empfohlene Flotte und Investitionsfolge für den vollständigen Fünf-Phasen-Businessplan.", finalInstalledFleet: "Installierte Endflotte", initialPurchase: "Erstkauf", laterAdditions: "Spätere Ergänzungen", phase5Utilisation: "Auslastung Phase 5", plannedCremationsSummary: "{years} {yearWord} · {total} geplante Kremationen", investmentPlanText: "Investitionsplan: {schedule}.", futurePhasesText: "Künftige Phasen werden von Anfang an berücksichtigt, damit jede installierte Maschine langfristig genutzt wird.", noMachineZero: "Für den aktuellen Plan ohne Bedarf ist kein Maschinenkauf erforderlich.", phaseDetail: "{period} · {volume} Tiere/Jahr · {individual} % Einzel / {collective} % Sammel.", fleetUtilisation: "Flottenauslastung", loadAcrossInstalled: "Last der installierten Flotte", includesEarlierPurchases: "Enthält frühere Käufe", investmentAction: "Investitionsmaßnahme", spareCapacity: "Reservekapazität", acrossInstalledUnits: "Über die installierte Flotte", fleetAndSpare: "Auslastung: {utilisation} · Reserve: {spare}.",
+    initialInvestmentRequired: "Erstinvestition erforderlich.", noPreviousFleet: "Vor Phase 1 ist keine bestehende Flotte vorhanden.", avoidPurchase: "Kauf von {action} vermeiden", retainSubset: "Bereits installierte Flotte ganz oder teilweise behalten:", noPurchasePlanned: "In Phase {phase} ist kein Kauf geplant.", installedFleetCovers: "Die installierte Flotte deckt den Bedarf ab ungefähr {hours} h/Tag unter den aktuellen Annahmen.", noPracticalHours: "Keine sinnvolle reine Betriebszeit-Alternative erforderlich.", purchaseTimelineCapacity: "Der empfohlene Kaufzeitplan bleibt der verfügbare Kapazitätsplan.", demand: "Bedarf", installed: "installiert", machineUnits: "Maschinenanzahl", occupiedCapacity: "Genutzte Kapazität", fleetSufficient: "Flotte ausreichend",
+    onePathTitle: "Ein Investitionspfad über alle fünf Phasen", stagedPathTitle: "Stufenweiser Investitionsplan passend zum Wachstum", rationaleIntro: "Die Empfehlung verbindet den prognostizierten Kundenbedarf mit einer langfristigen Flotte und einem klaren Kaufzeitplan.", inFinalFleet: "in der Endflotte.", overPlan: "im Planzeitraum.", utilisationInPhase5: "Flottenauslastung in Phase 5.", eachPhaseCovered: "Jede Phase wird von der installierten Flotte abgedeckt.", installedUseful: "Installierte Maschinen bleiben in allen späteren Phasen nutzbar.", openingShown: "Betriebszeit-Alternativen werden angezeigt, wenn sie einen zusätzlichen Kauf verschieben können.", commercialResult: "Kommerzielles Ergebnis:", commercialResultText: "eine empfohlene Konfiguration, der Zeitpunkt jeder Investition und die verfügbare Betriebsreserve.", ft125PriorityText: "Ab zwei Maschinen wird FT125 + FT40/FT70 priorisiert, wenn der FT125 den gesamten Sammelbedarf und die kleine Maschine den regulären Einzelbedarf abdeckt.", noEquivalent: "Für diesen Businessplan ist keine gleichwertige Alternative verfügbar.", onlyMinimum: "Die empfohlene Flotte ist unter den gewählten Annahmen die einzige Konfiguration mit der minimalen Maschinenanzahl.", alternative: "Alternative {n}", mixedFleet: "Gemischte Flotte", singleModelFleet: "Einmodell-Flotte", start: "Start", utilInPhase5: "{utilisation} Auslastung in Phase 5", atMaturity: "{fleet} im Endausbau, mit passend zum Gesamtplan terminierten Käufen.", horizon: "{years}-Jahres-Horizont · {total} geplante Kremationen", reviewAssumptions: "Annahmen prüfen", noFeasibleFleet: "Innerhalb der aktuellen Berechnungsgrenze wurde keine machbare Flotte gefunden.", noResultAvailable: "Kein Ergebnis verfügbar.", reviewInputsFirst: "Prüfen Sie zuerst die Businessplan-Annahmen.",
+    clientRecommendationReport: "Kunden-Empfehlungsbericht", generated: "Erstellt am {date}", clientLabel: "Kunde: {name}", reportTitle: "PET-Flottenempfehlung", reportSubtitle: "Automatischer Kapazitäts- und Investitionsplan über fünf Phasen auf Basis der eingegebenen Kundenannahmen.", recommendedFinalFleet: "Empfohlene Endflotte", planningHorizon: "Planungshorizont", phase5Spare: "Reservekapazität Phase 5", underAssumptions: "Unter den eingegebenen Annahmen", recommendedByPhase: "Empfohlener Plan je Phase", notRequired: "Nicht erforderlich", assumptionsTitle: "Businessplan-Annahmen und Entscheidungshinweise", assumptionsSubtitle: "Die Empfehlung wird bei jeder Änderung einer Annahme automatisch aktualisiert.", clientAssumptions: "Kundenannahmen", individualCollective: "Einzel / Sammel", openingTime: "Betriebszeit", operatingDaysAvailability: "Betriebstage / Verfügbarkeit", averagePetWeight: "Durchschnittliches Tiergewicht", optionalOpeningScenarios: "Optionale Betriebszeit-Szenarien", noOpeningAlternative: "Keine Betriebszeit-Alternative erforderlich", otherMinimumFleets: "Weitere Flotten mit minimaler Stückzahl", noEquivalentReport: "Keine gleichwertige Alternative mit minimaler Stückzahl verfügbar.", recommendationLogic: "Empfehlungslogik", logicCoverage: "Einzel- und Sammelbedarf in jeder Phase vollständig abdecken.", logicMinUnits: "Minimale Anzahl physischer Maschinen verwenden.", logicKeep: "Jede installierte Maschine langfristig in der Flotte behalten.", logicMachineYears: "Maschinenjahre minimieren und jeden Kauf zum erforderlichen Zeitpunkt vorsehen.", logicFt125: "FT125 + FT40/FT70 priorisieren, wenn ein FT125 den gesamten Sammelbedarf und eine kleine Maschine den regulären Einzelbedarf abdeckt.", logicFit: "Danach Kapazitätsanpassung und Lastverteilung vergleichen; Modellvielfalt ist nur der letzte Gleichstandsfaktor.", scopeTitle: "Umfang dieser Empfehlung", scopeText: "Diese technische Kapazitätsempfehlung basiert auf dem eingegebenen Businessplan und validierten Maschinenleistungen. CAPEX, OPEX, Energie, Filterung und TCO sind in dieser Version keine Bewertungskriterien.", important: "Wichtig:", importantText: "Die Ergebnisse sind Planungswerte. Die endgültige Auswahl muss anhand der Projektkonfiguration, lokalen Bedingungen und neuesten validierten technischen Daten bestätigt werden.", unnamedClient: "Kunde nicht angegeben"
+  });
+
+  mergeLanguage("it", {
+    hoursShort: "h/giorno", plannedCremations: "cremazioni previste",
+    brandSubtitle: "Dimensionamento della flotta e pianificazione degli investimenti", darkMode: "Passa alla modalità scura", lightMode: "Passa alla modalità chiara", downloadPdf: "Scarica PDF cliente", downloadPdfTitle: "Apre la finestra di stampa per salvare il rapporto in PDF", resetInputs: "Reimposta dati", commercialSupport: "Supporto alla decisione commerciale:", commercialSupportText: "inserire il business plan del cliente in cinque fasi per ottenere la flotta consigliata, il calendario degli investimenti, l’utilizzo e le alternative sugli orari di apertura.", clientNeed: "Esigenza cliente", businessInputs: "Dati del business plan", inputHint: "Modificare le celle gialle. Le celle grigie sono calcolate automaticamente e bloccate.", clientName: "Nome cliente", clientNamePlaceholder: "Inserire il nome del cliente", clientInput: "Dato cliente", calculated: "Calcolato",
+    input: "Dato", phase: "Fase", phase1: "Fase 1", phase2: "Fase 2", phase3: "Fase 3", phase4: "Fase 4", phase5: "Fase 5", unit: "Unità", recommendation: "Raccomandazione", recommendationHint: "La vista globale è mostrata per impostazione predefinita. Selezionare una fase per i dettagli.", focusPhase: "Fase selezionata", allPhases: "Tutte le fasi", recommendedPlan: "Piano consigliato", fleetTimeline: "Flotta e calendario degli investimenti", chartTitle: "Flotta installata e capacità utilizzata", chartDescription: "Ogni colore identifica un modello installato. La linea rossa mostra la capacità utilizzata e le linee tratteggiate le soglie di 1, 2, 3… macchine.", decisionSummary: "Sintesi della decisione", period: "Periodo", individualPerYear: "Individuale/anno", collectivePerYear: "Collettivo/anno", installedFleet: "Flotta installata", purchase: "Acquisto", utilisation: "Utilizzo", spare: "Margine", openingAlternative: "Alternativa orario", status: "Stato", optionalScenario: "Scenario operativo opzionale", openingOption: "Opzione orario di apertura", openingDescription: "Quando possibile, mantenere la flotta installata e aumentare l’orario giornaliero invece di acquistare l’unità successiva.", secondaryOption: "Opzione secondaria", sameUnitAlternatives: "Alternative a pari unità", otherFleets: "Altre flotte finali possibili", otherFleetsDescription: "Configurazioni tecniche alternative con lo stesso numero minimo di macchine fisiche.", preparedBy: "Preparato da",
+    durationLabel: "Durata della fase", yearsUnit: "anni", durationHelp: "Numero di anni solari coperti dalla fase. La domanda resta annuale.", ratioLabel: "Rapporto individuale / collettivo", ratioUnit: "% I / % C", ratioHelp: "Ripartizione della domanda. Inserire la quota individuale; quella collettiva è calcolata automaticamente.", annualVolumeLabel: "Volume annuale", petsPerYear: "animali/anno", annualVolumeHelp: "Domanda annua totale di cremazioni nella fase.", individualVolumeLabel: "Volume individuale annuo", individualVolumeHelp: "Volume annuo moltiplicato per la quota individuale.", collectiveVolumeLabel: "Volume collettivo annuo", collectiveVolumeHelp: "Volume annuo moltiplicato per la quota collettiva.", hoursLabel: "Ore al giorno", hoursPerDay: "ore/giorno", hoursHelp: "Orario giornaliero previsto per questa fase.", daysLabel: "Giorni all’anno", daysPerYear: "giorni/anno", daysHelp: "Giorni di attività previsti ogni anno.", availabilityLabel: "Disponibilità", percentUnit: "%", availabilityHelp: "Disponibilità effettiva dopo i fermi pianificati e imprevisti. Predefinita: 95%.", weightLabel: "Peso medio animale", kgPerPet: "kg/animale", weightHelp: "Usato per convertire la capacità collettiva da kg/h ad animali/h.", largePetsLabel: "Quota animali molto grandi — solo FT125", percentIndividual: "% dell’individuale", largePetsHelp: "Quota della domanda individuale che può essere trattata in un FT125.",
+    yearN: "Anno {n}", yearsRange: "Anni {start}–{end}", noPurchase: "Nessun acquisto", noAdditionalUnit: "Nessuna unità aggiuntiva", addInY: "Aggiungere {action} in A{year}", buyAtStart: "Acquistare {action} all’inizio dell’anno {year}", noPurchaseRequired: "Nessun acquisto necessario", noUnit: "Nessuna unità", noUnits: "Nessuna unità", none: "Nessuna", exactModelCombination: "Combinazione esatta dei modelli", startOfYear: "Inizio anno {year}", zeroDemandPlan: "Piano senza domanda", additionalUnitAfter: "{count} {unit} aggiuntiva dopo il primo acquisto", year: "anno", years: "anni", physicalUnit: "unità fisica", physicalUnits: "unità fisiche", purchaseStage: "fase di acquisto", purchaseStages: "fasi di acquisto", machine: "macchina", machines: "macchine",
+    recommendedFleetPath: "Flotta e percorso d’investimento consigliati per l’intero business plan in cinque fasi.", finalInstalledFleet: "Flotta finale installata", initialPurchase: "Acquisto iniziale", laterAdditions: "Aggiunte successive", phase5Utilisation: "Utilizzo fase 5", plannedCremationsSummary: "{years} {yearWord} · {total} cremazioni previste", investmentPlanText: "Piano d’investimento: {schedule}.", futurePhasesText: "Le fasi future sono considerate fin dall’inizio affinché ogni macchina installata resti utile nel lungo periodo.", noMachineZero: "Nessun acquisto è necessario per il piano senza domanda.", phaseDetail: "{period} · {volume} animali/anno · {individual}% individuale / {collective}% collettivo.", fleetUtilisation: "Utilizzo della flotta", loadAcrossInstalled: "Carico sulla flotta installata", includesEarlierPurchases: "Include gli acquisti precedenti", investmentAction: "Azione d’investimento", spareCapacity: "Capacità disponibile", acrossInstalledUnits: "Sulla flotta installata", fleetAndSpare: "Utilizzo: {utilisation} · Capacità disponibile: {spare}.", initialInvestmentRequired: "Investimento iniziale necessario.", noPreviousFleet: "Non esiste una flotta precedente da mantenere prima della fase 1.", avoidPurchase: "Evitare l’acquisto di {action}", retainSubset: "Mantenere tutta o parte della flotta già installata:", noPurchasePlanned: "Nessun acquisto previsto nella fase {phase}.", installedFleetCovers: "La flotta installata copre la domanda da circa {hours} h/giorno con le ipotesi attuali.", noPracticalHours: "Non è necessaria un’alternativa basata solo sulle ore.", purchaseTimelineCapacity: "Il calendario di acquisto consigliato resta il piano di capacità disponibile.", demand: "Domanda", installed: "installato", machineUnits: "Numero macchine", occupiedCapacity: "Capacità utilizzata", fleetSufficient: "Flotta sufficiente",
+    onePathTitle: "Un unico percorso d’investimento sulle cinque fasi", stagedPathTitle: "Un piano di investimento progressivo allineato alla crescita", rationaleIntro: "La raccomandazione collega la domanda prevista del cliente a una flotta di lungo periodo e a un calendario chiaro.", inFinalFleet: "nella flotta finale.", overPlan: "nel periodo del piano.", utilisationInPhase5: "di utilizzo della flotta nella fase 5.", eachPhaseCovered: "Ogni fase è coperta dalla flotta installata.", installedUseful: "Ogni macchina installata resta utile nelle fasi successive.", openingShown: "Le alternative sugli orari sono mostrate quando possono rinviare un acquisto.", commercialResult: "Risultato commerciale:", commercialResultText: "una configurazione consigliata, la tempistica di ogni investimento e il margine operativo disponibile.", ft125PriorityText: "Da due macchine in poi, FT125 + FT40/FT70 è prioritario se FT125 copre tutto il collettivo e la macchina piccola l’individuale standard.", noEquivalent: "Nessuna alternativa equivalente è disponibile per questo business plan.", onlyMinimum: "La flotta consigliata è l’unica configurazione che raggiunge il numero minimo di macchine con queste ipotesi.", alternative: "Alternativa {n}", mixedFleet: "Flotta mista", singleModelFleet: "Flotta monomodello", start: "Avvio", utilInPhase5: "{utilisation} di utilizzo nella fase 5", atMaturity: "{fleet} a regime, con acquisti pianificati secondo l’intero business plan.", horizon: "Orizzonte di {years} anni · {total} cremazioni previste", reviewAssumptions: "Verificare le ipotesi", noFeasibleFleet: "Nessuna flotta fattibile trovata entro il limite di calcolo corrente.", noResultAvailable: "Nessun risultato disponibile.", reviewInputsFirst: "Verificare prima le ipotesi del business plan.",
+    clientRecommendationReport: "Rapporto di raccomandazione cliente", generated: "Generato il {date}", clientLabel: "Cliente: {name}", reportTitle: "Raccomandazione flotta PET", reportSubtitle: "Piano automatico di capacità e investimento su cinque fasi basato sulle ipotesi inserite.", recommendedFinalFleet: "Flotta finale consigliata", planningHorizon: "Orizzonte di pianificazione", phase5Spare: "Capacità disponibile fase 5", underAssumptions: "Secondo le ipotesi inserite", recommendedByPhase: "Piano consigliato per fase", notRequired: "Non necessario", assumptionsTitle: "Ipotesi del business plan e note decisionali", assumptionsSubtitle: "La raccomandazione cambia automaticamente quando viene modificata un’ipotesi.", clientAssumptions: "Ipotesi cliente", individualCollective: "Individuale / collettivo", openingTime: "Orario di apertura", operatingDaysAvailability: "Giorni operativi / disponibilità", averagePetWeight: "Peso medio animale", optionalOpeningScenarios: "Scenari opzionali di orario", noOpeningAlternative: "Nessuna alternativa di orario necessaria", otherMinimumFleets: "Altre flotte con numero minimo", noEquivalentReport: "Nessuna alternativa equivalente con numero minimo disponibile.", recommendationLogic: "Logica di raccomandazione", logicCoverage: "Coprire la domanda individuale e collettiva in ogni fase.", logicMinUnits: "Usare il numero minimo di macchine fisiche.", logicKeep: "Mantenere ogni macchina installata nella flotta di lungo periodo.", logicMachineYears: "Minimizzare gli anni-macchina e collocare ogni acquisto al momento necessario.", logicFt125: "Dare priorità a FT125 + FT40/FT70 quando un FT125 copre tutto il collettivo e una macchina piccola l’individuale standard.", logicFit: "Poi confrontare adeguatezza della capacità ed equilibrio dei carichi; la varietà di modelli è solo l’ultimo spareggio.", scopeTitle: "Ambito della raccomandazione", scopeText: "Questa raccomandazione tecnica di capacità si basa sul business plan inserito e su capacità macchina validate. CAPEX, OPEX, energia, filtrazione e TCO non sono criteri di classifica in questa versione.", important: "Importante:", importantText: "I risultati sono stime di pianificazione. La scelta finale deve essere confermata rispetto alla configurazione del progetto, ai vincoli locali e agli ultimi dati tecnici validati.", unnamedClient: "Cliente non specificato"
+  });
+
+  mergeLanguage("es", {
+    hoursShort: "h/día", plannedCremations: "cremaciones previstas",
+    brandSubtitle: "Dimensionamiento de flota y planificación de inversiones", darkMode: "Cambiar al modo oscuro", lightMode: "Cambiar al modo claro", downloadPdf: "Descargar PDF del cliente", downloadPdfTitle: "Abre el diálogo de impresión para guardar el informe en PDF", resetInputs: "Restablecer datos", commercialSupport: "Apoyo a la decisión comercial:", commercialSupportText: "introduzca el plan de negocio del cliente en cinco fases para obtener una flota recomendada, un calendario de inversión, la utilización y alternativas de horario.", clientNeed: "Necesidad del cliente", businessInputs: "Datos del plan de negocio", inputHint: "Modifique las celdas amarillas. Las celdas grises se calculan automáticamente y están bloqueadas.", clientName: "Nombre del cliente", clientNamePlaceholder: "Introducir nombre del cliente", clientInput: "Dato del cliente", calculated: "Calculado",
+    input: "Dato", phase: "Fase", phase1: "Fase 1", phase2: "Fase 2", phase3: "Fase 3", phase4: "Fase 4", phase5: "Fase 5", unit: "Unidad", recommendation: "Recomendación", recommendationHint: "La vista global se muestra por defecto. Seleccione una fase para revisar su detalle.", focusPhase: "Fase seleccionada", allPhases: "Todas las fases", recommendedPlan: "Plan recomendado", fleetTimeline: "Flota y calendario de inversión", chartTitle: "Flota instalada y capacidad utilizada", chartDescription: "Cada color identifica un modelo instalado. La línea roja muestra la capacidad utilizada y las líneas discontinuas los niveles de 1, 2, 3… máquinas.", decisionSummary: "Resumen de la decisión", period: "Periodo", individualPerYear: "Individual/año", collectivePerYear: "Colectivo/año", installedFleet: "Flota instalada", purchase: "Compra", utilisation: "Utilización", spare: "Margen", openingAlternative: "Alternativa de horario", status: "Estado", optionalScenario: "Escenario operativo opcional", openingOption: "Opción de horario de apertura", openingDescription: "Cuando sea posible, mantenga la flota instalada y aumente el horario diario en lugar de comprar la siguiente unidad.", secondaryOption: "Opción secundaria", sameUnitAlternatives: "Alternativas con igual número", otherFleets: "Otras flotas finales posibles", otherFleetsDescription: "Configuraciones técnicas alternativas con el mismo número mínimo de máquinas físicas.", preparedBy: "Preparado por",
+    durationLabel: "Duración de la fase", yearsUnit: "años", durationHelp: "Número de años naturales de la fase. La demanda sigue siendo anual.", ratioLabel: "Proporción individual / colectiva", ratioUnit: "% I / % C", ratioHelp: "Reparto de la demanda. Introduzca el porcentaje individual; el colectivo se calcula automáticamente.", annualVolumeLabel: "Volumen anual", petsPerYear: "animales/año", annualVolumeHelp: "Demanda anual total de cremaciones durante la fase.", individualVolumeLabel: "Volumen individual anual", individualVolumeHelp: "Volumen anual multiplicado por el porcentaje individual.", collectiveVolumeLabel: "Volumen colectivo anual", collectiveVolumeHelp: "Volumen anual multiplicado por el porcentaje colectivo.", hoursLabel: "Horas al día", hoursPerDay: "horas/día", hoursHelp: "Horario diario previsto para esta fase.", daysLabel: "Días al año", daysPerYear: "días/año", daysHelp: "Días de operación previstos al año.", availabilityLabel: "Disponibilidad", percentUnit: "%", availabilityHelp: "Disponibilidad efectiva tras paradas previstas e imprevistas. Valor por defecto: 95 %.", weightLabel: "Peso medio del animal", kgPerPet: "kg/animal", weightHelp: "Se utiliza para convertir la capacidad colectiva de kg/h a animales/h.", largePetsLabel: "Porcentaje de animales muy grandes — solo FT125", percentIndividual: "% del individual", largePetsHelp: "Porcentaje de la demanda individual que puede tratarse en un FT125.",
+    yearN: "Año {n}", yearsRange: "Años {start}–{end}", noPurchase: "Sin compra", noAdditionalUnit: "Sin unidad adicional", addInY: "Añadir {action} en A{year}", buyAtStart: "Comprar {action} al inicio del año {year}", noPurchaseRequired: "No se requiere compra", noUnit: "Sin unidad", noUnits: "Sin unidades", none: "Ninguna", exactModelCombination: "Combinación exacta de modelos", startOfYear: "Inicio del año {year}", zeroDemandPlan: "Plan sin demanda", additionalUnitAfter: "{count} {unit} adicional después de la primera compra", year: "año", years: "años", physicalUnit: "unidad física", physicalUnits: "unidades físicas", purchaseStage: "etapa de compra", purchaseStages: "etapas de compra", machine: "máquina", machines: "máquinas",
+    recommendedFleetPath: "Flota y calendario de inversión recomendados para el plan completo de cinco fases.", finalInstalledFleet: "Flota final instalada", initialPurchase: "Compra inicial", laterAdditions: "Adiciones posteriores", phase5Utilisation: "Utilización fase 5", plannedCremationsSummary: "{years} {yearWord} · {total} cremaciones previstas", investmentPlanText: "Plan de inversión: {schedule}.", futurePhasesText: "Las fases futuras se consideran desde el inicio para que cada máquina instalada siga siendo útil a largo plazo.", noMachineZero: "No se requiere ninguna compra para el plan actual sin demanda.", phaseDetail: "{period} · {volume} animales/año · {individual} % individual / {collective} % colectivo.", fleetUtilisation: "Utilización de la flota", loadAcrossInstalled: "Carga de la flota instalada", includesEarlierPurchases: "Incluye compras anteriores", investmentAction: "Acción de inversión", spareCapacity: "Capacidad disponible", acrossInstalledUnits: "En la flota instalada", fleetAndSpare: "Utilización: {utilisation} · Capacidad disponible: {spare}.", initialInvestmentRequired: "Inversión inicial necesaria.", noPreviousFleet: "No existe una flota anterior antes de la fase 1.", avoidPurchase: "Evitar la compra de {action}", retainSubset: "Mantener toda o parte de la flota ya instalada:", noPurchasePlanned: "No se prevé ninguna compra en la fase {phase}.", installedFleetCovers: "La flota instalada cubre la demanda desde aproximadamente {hours} h/día con las hipótesis actuales.", noPracticalHours: "No se requiere una alternativa práctica basada solo en horas.", purchaseTimelineCapacity: "El calendario de compras recomendado sigue siendo el plan de capacidad disponible.", demand: "Demanda", installed: "instalado", machineUnits: "Número de máquinas", occupiedCapacity: "Capacidad utilizada", fleetSufficient: "Flota suficiente",
+    onePathTitle: "Una única trayectoria de inversión en las cinco fases", stagedPathTitle: "Un plan de inversión progresivo alineado con el crecimiento", rationaleIntro: "La recomendación conecta la demanda prevista del cliente con una flota a largo plazo y un calendario claro.", inFinalFleet: "en la flota final.", overPlan: "durante el plan.", utilisationInPhase5: "de utilización de la flota en la fase 5.", eachPhaseCovered: "Cada fase queda cubierta por la flota instalada.", installedUseful: "Cada máquina instalada sigue siendo útil en las fases posteriores.", openingShown: "Las alternativas de horario se muestran cuando pueden retrasar una compra adicional.", commercialResult: "Resultado comercial:", commercialResultText: "una configuración recomendada, el momento de cada inversión y el margen operativo disponible.", ft125PriorityText: "A partir de dos máquinas se prioriza FT125 + FT40/FT70 si el FT125 cubre todo el colectivo y la máquina pequeña el individual estándar.", noEquivalent: "No hay una alternativa equivalente para este plan de negocio.", onlyMinimum: "La flota recomendada es la única configuración que alcanza el número mínimo de máquinas con estas hipótesis.", alternative: "Alternativa {n}", mixedFleet: "Flota mixta", singleModelFleet: "Flota de un solo modelo", start: "Inicio", utilInPhase5: "{utilisation} de utilización en la fase 5", atMaturity: "{fleet} a plena capacidad, con compras programadas según todo el plan.", horizon: "Horizonte de {years} años · {total} cremaciones previstas", reviewAssumptions: "Revisar las hipótesis", noFeasibleFleet: "No se encontró una flota viable dentro del límite actual de cálculo.", noResultAvailable: "No hay resultado disponible.", reviewInputsFirst: "Revise primero las hipótesis del plan de negocio.",
+    clientRecommendationReport: "Informe de recomendación del cliente", generated: "Generado el {date}", clientLabel: "Cliente: {name}", reportTitle: "Recomendación de flota PET", reportSubtitle: "Plan automático de capacidad e inversión en cinco fases basado en las hipótesis introducidas.", recommendedFinalFleet: "Flota final recomendada", planningHorizon: "Horizonte de planificación", phase5Spare: "Capacidad disponible fase 5", underAssumptions: "Según las hipótesis introducidas", recommendedByPhase: "Plan recomendado por fase", notRequired: "No necesario", assumptionsTitle: "Hipótesis del plan de negocio y notas de decisión", assumptionsSubtitle: "La recomendación cambia automáticamente al modificar cualquier hipótesis.", clientAssumptions: "Hipótesis del cliente", individualCollective: "Individual / colectivo", openingTime: "Horario de apertura", operatingDaysAvailability: "Días operativos / disponibilidad", averagePetWeight: "Peso medio del animal", optionalOpeningScenarios: "Escenarios opcionales de horario", noOpeningAlternative: "No se requiere alternativa de horario", otherMinimumFleets: "Otras flotas con número mínimo", noEquivalentReport: "No hay una alternativa equivalente con el número mínimo.", recommendationLogic: "Lógica de recomendación", logicCoverage: "Cubrir la demanda individual y colectiva en cada fase.", logicMinUnits: "Usar el número mínimo de máquinas físicas.", logicKeep: "Mantener cada máquina instalada en la flota a largo plazo.", logicMachineYears: "Minimizar los años-máquina y situar cada compra cuando sea necesaria.", logicFt125: "Priorizar FT125 + FT40/FT70 cuando un FT125 cubre todo el colectivo y una máquina pequeña el individual estándar.", logicFit: "Después comparar el ajuste de capacidad y el equilibrio de carga; la diversidad de modelos solo sirve como último desempate.", scopeTitle: "Alcance de esta recomendación", scopeText: "Esta recomendación técnica de capacidad se basa en el plan introducido y en capacidades validadas. CAPEX, OPEX, energía, filtración y TCO no son criterios de clasificación en esta versión.", important: "Importante:", importantText: "Los resultados son estimaciones de planificación. La selección final debe confirmarse con la configuración del proyecto, las restricciones locales y los últimos datos técnicos validados.", unnamedClient: "Cliente no especificado"
+  });
+
+  function tr(key, variables) {
+    const language = typeof state !== "undefined" && state.language ? state.language : "en";
+    const template = (TRANSLATIONS[language] && TRANSLATIONS[language][key]) || TRANSLATIONS.en[key] || key;
+    return String(template).replace(/\{(\w+)\}/g, (_, name) => variables && variables[name] !== undefined ? variables[name] : `{${name}}`);
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? "").replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[character]));
+  }
+
+  const INPUT_ROWS = [
+    {
+      key: "duration",
+      labelKey: "durationLabel",
+      unitKey: "yearsUnit",
+      min: 1,
+      max: 50,
+      step: 1,
+      helpKey: "durationHelp"
+    },
+    {
+      key: "individualShare",
+      labelKey: "ratioLabel",
+      unitKey: "ratioUnit",
+      min: 0,
+      max: 100,
+      step: 0.1,
+      helpKey: "ratioHelp"
+    },
+    {
+      key: "volume",
+      labelKey: "annualVolumeLabel",
+      unitKey: "petsPerYear",
+      min: 0,
+      max: 1000000,
+      step: 1,
+      helpKey: "annualVolumeHelp"
+    },
+    {
+      key: "individualDemand",
+      labelKey: "individualVolumeLabel",
+      unitKey: "petsPerYear",
+      computed: true,
+      helpKey: "individualVolumeHelp"
+    },
+    {
+      key: "collectiveDemand",
+      labelKey: "collectiveVolumeLabel",
+      unitKey: "petsPerYear",
+      computed: true,
+      helpKey: "collectiveVolumeHelp"
+    },
+    {
+      key: "hours",
+      labelKey: "hoursLabel",
+      unitKey: "hoursPerDay",
+      min: 0.1,
+      max: 24,
+      step: 0.1,
+      helpKey: "hoursHelp"
+    },
+    {
+      key: "days",
+      labelKey: "daysLabel",
+      unitKey: "daysPerYear",
+      min: 1,
+      max: 366,
+      step: 1,
+      helpKey: "daysHelp"
+    },
+    {
+      key: "availability",
+      labelKey: "availabilityLabel",
+      unitKey: "percentUnit",
+      min: 1,
+      max: 100,
+      step: 0.1,
+      helpKey: "availabilityHelp"
+    },
+    {
+      key: "weight",
+      labelKey: "weightLabel",
+      unitKey: "kgPerPet",
+      min: 0.1,
+      max: 500,
+      step: 0.1,
+      helpKey: "weightHelp"
+    },
+    {
+      key: "largeShare",
+      labelKey: "largePetsLabel",
+      unitKey: "percentIndividual",
+      min: 0,
+      max: 100,
+      step: 0.1,
+      helpKey: "largePetsHelp"
+    }
+  ];
+
+  const state = {
+    phases: engine.DEFAULT_PHASES.map((phase) => ({ ...phase })),
+    focus: "global",
+    plan: null,
+    language: "en",
+    theme: "light",
+    clientName: ""
+  };
+
+  const elements = {
+    inputRows: document.getElementById("inputRows"),
+    recommendationHeading: document.getElementById("recommendationHeading"),
+    recommendationKpis: document.getElementById("recommendationKpis"),
+    focusPhase: document.getElementById("focusPhase"),
+    decisionCallout: document.getElementById("decisionCallout"),
+    operatingNoteBody: document.getElementById("operatingNoteBody"),
+    planSummary: document.getElementById("planSummary"),
+    horizonSummary: document.getElementById("horizonSummary"),
+    phaseCards: document.getElementById("phaseCards"),
+    chartLegend: document.getElementById("chartLegend"),
+    fleetChart: document.getElementById("fleetChart"),
+    rationaleTitle: document.getElementById("rationaleTitle"),
+    rationaleBody: document.getElementById("rationaleBody"),
+    resultsBody: document.getElementById("resultsBody"),
+    alternativeList: document.getElementById("alternativeList"),
+    clientReport: document.getElementById("clientReport"),
+    clientName: document.getElementById("clientName"),
+    languageSelect: document.getElementById("languageSelect"),
+    themeToggle: document.getElementById("themeToggle"),
+    resetInputs: document.getElementById("resetInputs"),
+    downloadPdf: document.getElementById("downloadPdf")
+  };
+
+  let numberFormatter;
+  let decimalFormatter;
+  let unitFormatter;
+  let hourFormatter;
+
+  function updateFormatters() {
+    const locale = LOCALES[state.language] || LOCALES.en;
+    numberFormatter = new Intl.NumberFormat(locale, { maximumFractionDigits: 0 });
+    decimalFormatter = new Intl.NumberFormat(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    unitFormatter = new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    hourFormatter = new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  updateFormatters();
+
+  function formatNumber(value) {
+    return numberFormatter.format(Math.round(value));
+  }
+
+  function formatPercent(value) {
+    return `${decimalFormatter.format(value * 100)}%`;
+  }
+
+  function formatShare(value) {
+    const rounded = Math.round(value * 10) / 10;
+    return Number.isInteger(rounded) ? String(rounded) : decimalFormatter.format(rounded);
+  }
+
+  function plural(value, singular, pluralForm) {
+    return Number(value) === 1 ? singular : (pluralForm || `${singular}s`);
+  }
+
+  function translatedPlural(value, singularKey, pluralKey) {
+    return tr(Number(value) === 1 ? singularKey : pluralKey);
+  }
+
+  function renderThemeToggle() {
+    const isDark = state.theme === "dark";
+    const label = tr(isDark ? "lightMode" : "darkMode");
+    const icon = isDark
+      ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.66 6.34l1.41-1.41"></path></svg>`
+      : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"></path></svg>`;
+    elements.themeToggle.innerHTML = `${icon}<span class="sr-only">${escapeHtml(label)}</span>`;
+    elements.themeToggle.setAttribute("aria-label", label);
+    elements.themeToggle.setAttribute("title", label);
+    elements.themeToggle.setAttribute("aria-pressed", String(isDark));
+  }
+
+  function applyStaticTranslations() {
+    document.documentElement.lang = state.language;
+    document.querySelectorAll("[data-i18n]").forEach((node) => {
+      node.textContent = tr(node.dataset.i18n);
+    });
+    document.querySelectorAll("[data-i18n-placeholder]").forEach((node) => {
+      node.placeholder = tr(node.dataset.i18nPlaceholder);
+    });
+    document.querySelectorAll("[data-i18n-title]").forEach((node) => {
+      node.title = tr(node.dataset.i18nTitle);
+    });
+    renderThemeToggle();
+    elements.languageSelect.value = state.language;
+    document.title = `PET Sizing Tool · ${tr("recommendation")}`;
+  }
+
+  function sumCounts(counts) {
+    return engine.totalUnits(counts);
+  }
+
+  function inputMarkup(row, phase, index) {
+    const base = `type="number" inputmode="decimal" aria-label="${escapeHtml(tr(row.labelKey))}, ${escapeHtml(tr(`phase${index + 1}`))}" data-key="${row.key}" data-phase="${index}" min="${row.min}" max="${row.max}" step="${row.step}" value="${phase[row.key]}"`;
+    if (row.key === "individualShare") {
+      return `<td><div class="ratio-editor"><label><input ${base}><small>I</small></label><span class="ratio-complement" data-ratio-collective="${index}">—</span></div></td>`;
+    }
+    return `<td><input ${base}></td>`;
+  }
+
+  function buildInputTable() {
+    elements.inputRows.innerHTML = INPUT_ROWS.map((row) => {
+      const labelClass = row.key === "largeShare" ? "field-label ft125-only" : "field-label";
+      const label = tr(row.labelKey);
+      const help = tr(row.helpKey);
+      const cells = state.phases.map((phase, index) => {
+        if (row.computed) {
+          return `<td class="calculated-cell" data-computed="${row.key}" data-phase="${index}">—</td>`;
+        }
+        return inputMarkup(row, phase, index);
+      }).join("");
+      return `<tr>
+        <th scope="row"><span class="${labelClass}">${escapeHtml(label)}<span class="help-dot" title="${escapeHtml(help)}" aria-label="${escapeHtml(help)}">i</span></span></th>
+        ${cells}
+        <td class="unit-cell">${escapeHtml(tr(row.unitKey))}</td>
+      </tr>`;
+    }).join("");
+
+    elements.inputRows.querySelectorAll("input").forEach((input) => {
+      input.addEventListener("input", handleInput);
+      input.addEventListener("change", normaliseInput);
+      input.addEventListener("blur", normaliseInput);
+    });
+  }
+
+  let renderTimer = null;
+  function syncStateFromInputs(normaliseValues) {
+    if (!elements.inputRows) return;
+    elements.inputRows.querySelectorAll("input[data-phase][data-key]").forEach((input) => {
+      const phaseIndex = Number(input.dataset.phase);
+      const key = input.dataset.key;
+      const value = Number(input.value);
+      if (Number.isFinite(value)) state.phases[phaseIndex][key] = value;
+    });
+    if (normaliseValues) {
+      state.phases = state.phases.map((phase) => engine.normalisePhase(phase));
+      elements.inputRows.querySelectorAll("input[data-phase][data-key]").forEach((input) => {
+        input.value = state.phases[Number(input.dataset.phase)][input.dataset.key];
+      });
+    }
+    state.clientName = elements.clientName ? elements.clientName.value.trim() : state.clientName;
+  }
+
+  function scheduleRender(delay) {
+    window.clearTimeout(renderTimer);
+    renderTimer = window.setTimeout(() => {
+      renderTimer = null;
+      render();
+    }, delay === undefined ? 60 : delay);
+  }
+
+  function handleInput(event) {
+    const input = event.currentTarget;
+    const phaseIndex = Number(input.dataset.phase);
+    const key = input.dataset.key;
+    const value = Number(input.value);
+    if (Number.isFinite(value)) state.phases[phaseIndex][key] = value;
+    scheduleRender();
+  }
+
+  function normaliseInput(event) {
+    window.clearTimeout(renderTimer);
+    renderTimer = null;
+    const input = event.currentTarget;
+    const phaseIndex = Number(input.dataset.phase);
+    const key = input.dataset.key;
+    const clean = engine.normalisePhase(state.phases[phaseIndex]);
+    state.phases[phaseIndex] = clean;
+    input.value = clean[key];
+    render();
+  }
+
+  function updateComputedRows() {
+    state.phases.forEach((phase, index) => {
+      const metrics = engine.phaseMetrics(phase);
+      const individualCell = elements.inputRows.querySelector(`[data-computed="individualDemand"][data-phase="${index}"]`);
+      const collectiveCell = elements.inputRows.querySelector(`[data-computed="collectiveDemand"][data-phase="${index}"]`);
+      const complement = elements.inputRows.querySelector(`[data-ratio-collective="${index}"]`);
+      individualCell.textContent = formatNumber(metrics.individualDemand);
+      collectiveCell.textContent = formatNumber(metrics.collectiveDemand);
+      complement.textContent = `${formatShare(100 - metrics.individualShare)}% C`;
+    });
+  }
+
+  function startYears() {
+    let year = 1;
+    return state.phases.map((phase) => {
+      const start = year;
+      year += engine.normalisePhase(phase).duration;
+      return start;
+    });
+  }
+
+  function periodLabel(index) {
+    const starts = startYears();
+    const duration = engine.normalisePhase(state.phases[index]).duration;
+    const start = starts[index];
+    return duration === 1 ? tr("yearN", { n: start }) : tr("yearsRange", { start, end: start + duration - 1 });
+  }
+
+  function purchaseLabel(purchases, year, short) {
+    if (sumCounts(purchases) === 0) return short ? tr("noPurchase") : tr("noAdditionalUnit");
+    const action = engine.countsLabel(purchases);
+    return short ? tr("addInY", { action, year }) : tr("buyAtStart", { action, year });
+  }
+
+  function investmentSchedule(recommended) {
+    const stages = recommended.phasePlans.filter((item) => sumCounts(item.purchases) > 0);
+    return stages.length
+      ? stages.map((item) => purchaseLabel(item.purchases, item.startYear, true)).join(" · ")
+      : tr("noPurchaseRequired");
+  }
+
+  function kpi(label, value, note, className) {
+    return `<div class="kpi ${className || ""}">
+      <div class="label">${label}</div>
+      <div class="value">${value}</div>
+      <div class="note">${note}</div>
+    </div>`;
+  }
+
+  function fleetChips(counts) {
+    const chips = engine.MACHINE_ORDER
+      .filter((code) => (counts[code] || 0) > 0)
+      .map((code) => `<span class="machine-chip" style="background:${COLORS[code]}">${counts[code]} × ${code}</span>`)
+      .join("");
+    return `<span class="machine-chips">${chips || tr("noUnit")}</span>`;
+  }
+
+  function openingOptionText(option) {
+    return `${engine.countsLabel(option.counts)} → ${hourFormatter.format(option.hours)} ${tr("hoursShort")}`;
+  }
+
+  function renderRecommendation(plan) {
+    const recommended = plan.recommended;
+    if (state.focus === "global") {
+      const horizonYears = state.phases.reduce((sum, phase) => sum + engine.normalisePhase(phase).duration, 0);
+      const totalCremations = state.phases.reduce((sum, phase) => {
+        const clean = engine.normalisePhase(phase);
+        return sum + clean.volume * clean.duration;
+      }, 0);
+      const purchasePhases = recommended.phasePlans.filter((item) => sumCounts(item.purchases) > 0);
+      const first = purchasePhases[0];
+      const laterUnits = purchasePhases.slice(1).reduce((sum, item) => sum + sumCounts(item.purchases), 0);
+      const finalPhase = recommended.phasePlans[recommended.phasePlans.length - 1];
+      elements.recommendationHeading.innerHTML = `<h2>${engine.countsLabel(recommended.finalFleet, tr("noUnit"))}</h2><p>${tr("recommendedFleetPath")}</p>`;
+      elements.recommendationKpis.innerHTML = [
+        kpi(tr("finalInstalledFleet"), engine.countsLabel(recommended.finalFleet, tr("none")), tr("exactModelCombination"), "accent"),
+        kpi(tr("initialPurchase"), first ? engine.countsLabel(first.purchases) : tr("none"), first ? tr("startOfYear", { year: first.startYear }) : tr("zeroDemandPlan"), "good"),
+        kpi(tr("laterAdditions"), laterUnits, tr("additionalUnitAfter", { count: laterUnits, unit: translatedPlural(laterUnits, "physicalUnit", "physicalUnits") })),
+        kpi(tr("phase5Utilisation"), formatPercent(finalPhase.allocation.utilization), tr("plannedCremationsSummary", { years: horizonYears, yearWord: translatedPlural(horizonYears, "year", "years"), total: formatNumber(totalCremations) }), finalPhase.allocation.utilization > .9 ? "warning" : "good")
+      ].join("");
+      elements.decisionCallout.innerHTML = first
+        ? `<strong>${tr("investmentPlanText", { schedule: investmentSchedule(recommended) })}</strong> ${tr("futurePhasesText")}`
+        : `<strong>${tr("noMachineZero")}</strong>`;
+    } else {
+      const phaseIndex = Number(state.focus);
+      const item = recommended.phasePlans[phaseIndex];
+      const allocation = item.allocation;
+      const purchase = purchaseLabel(item.purchases, item.startYear, false);
+      elements.recommendationHeading.innerHTML = `<h2>${tr(`phase${phaseIndex + 1}`)} · ${engine.countsLabel(item.counts, tr("noUnit"))}</h2><p>${tr("phaseDetail", { period: periodLabel(phaseIndex), volume: formatNumber(allocation.metrics.volume), individual: formatShare(allocation.metrics.individualShare), collective: formatShare(100 - allocation.metrics.individualShare) })}</p>`;
+      elements.recommendationKpis.innerHTML = [
+        kpi(tr("fleetUtilisation"), formatPercent(allocation.utilization), tr("loadAcrossInstalled"), allocation.utilization > .9 ? "warning" : "good"),
+        kpi(tr("installedFleet"), engine.countsLabel(item.counts, tr("none")), tr("includesEarlierPurchases"), "accent"),
+        kpi(tr("investmentAction"), sumCounts(item.purchases) ? engine.countsLabel(item.purchases) : tr("none"), purchaseLabel(item.purchases, item.startYear, true)),
+        kpi(tr("spareCapacity"), formatPercent(allocation.spareCapacity), tr("acrossInstalledUnits"), "good")
+      ].join("");
+      elements.decisionCallout.innerHTML = `<strong>${purchase}.</strong> ${tr("fleetAndSpare", { utilisation: formatPercent(allocation.utilization), spare: formatPercent(allocation.spareCapacity) })}`;
+    }
+  }
+
+  function openingCard(item) {
+    const options = item.openingOptions.map((option) => `<li><strong>${engine.countsLabel(option.counts)}</strong><span>${hourFormatter.format(option.hours)} ${tr("hoursShort")}</span></li>`).join("");
+    return `<article class="opening-card">
+      <div><span class="phase-tag">${tr(`phase${item.phaseIndex + 1}`)} · Y${item.startYear}</span><h3>${tr("avoidPurchase", { action: engine.countsLabel(item.purchases) })}</h3><p>${tr("retainSubset")}</p></div>
+      <ul>${options}</ul>
+    </article>`;
+  }
+
+  function renderOpeningOptions(recommended) {
+    if (state.focus !== "global") {
+      const phaseIndex = Number(state.focus);
+      const item = recommended.phasePlans[phaseIndex];
+      if (phaseIndex === 0) {
+        elements.operatingNoteBody.innerHTML = `<div class="opening-empty"><strong>${tr("initialInvestmentRequired")}</strong><span>${tr("noPreviousFleet")}</span></div>`;
+        return;
+      }
+      if (sumCounts(item.purchases) > 0 && item.openingOptions.length) {
+        elements.operatingNoteBody.innerHTML = openingCard(item);
+        return;
+      }
+      const required = engine.minimumHoursForFleet(item.counts, state.phases[phaseIndex]);
+      elements.operatingNoteBody.innerHTML = `<div class="opening-empty"><strong>${tr("noPurchasePlanned", { phase: phaseIndex + 1 })}</strong><span>${tr("installedFleetCovers", { hours: hourFormatter.format(required) })}</span></div>`;
+      return;
+    }
+
+    const phasesWithOptions = recommended.phasePlans.filter((item) => sumCounts(item.purchases) > 0 && item.openingOptions.length > 0);
+    if (!phasesWithOptions.length) {
+      elements.operatingNoteBody.innerHTML = `<div class="opening-empty"><strong>${tr("noPracticalHours")}</strong><span>${tr("purchaseTimelineCapacity")}</span></div>`;
+      return;
+    }
+    elements.operatingNoteBody.innerHTML = phasesWithOptions.map(openingCard).join("");
+  }
+
+  function renderPhaseCards(recommended) {
+    elements.phaseCards.innerHTML = recommended.phasePlans.map((item, index) => {
+      const purchaseClass = sumCounts(item.purchases) > 0 ? "purchase" : "sufficient";
+      const activeClass = state.focus === String(index) ? "active" : "";
+      return `<article class="phase-card ${activeClass}" role="button" tabindex="0" data-focus-phase="${index}" aria-label="${escapeHtml(tr(`phase${index + 1}`))}">
+        <strong>${tr(`phase${index + 1}`)}</strong>
+        <span>${periodLabel(index)} · ${item.duration} ${translatedPlural(item.duration, "year", "years")}</span>
+        <span>${tr("demand")}: ${formatNumber(item.allocation.metrics.individualDemand)} I + ${formatNumber(item.allocation.metrics.collectiveDemand)} C</span>
+        <span class="${purchaseClass}">${purchaseLabel(item.purchases, item.startYear, true)}</span>
+        ${fleetChips(item.counts)}
+      </article>`;
+    }).join("");
+    elements.phaseCards.querySelectorAll("[data-focus-phase]").forEach((card) => {
+      const activate = () => {
+        state.focus = card.dataset.focusPhase;
+        elements.focusPhase.value = state.focus;
+        render();
+      };
+      card.addEventListener("click", activate);
+      card.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          activate();
+        }
+      });
+    });
+  }
+
+  function renderChart(recommended) {
+    const plans = recommended.phasePlans;
+    const width = 1100;
+    const height = 360;
+    const margin = { top: 42, right: 112, bottom: 56, left: 62 };
+    const plotWidth = width - margin.left - margin.right;
+    const plotHeight = height - margin.top - margin.bottom;
+    const maxInstalled = Math.max(1, ...plans.map((item) => sumCounts(item.counts)));
+    const maxWorkload = Math.max(0, ...plans.map((item) => item.allocation.usedEquivalentUnits));
+    const yMax = Math.max(1, Math.ceil(Math.max(maxInstalled, maxWorkload)));
+    const band = plotWidth / plans.length;
+    const barWidth = Math.min(88, band * .44);
+    const xAt = (index) => margin.left + band * index + band / 2;
+    const yAt = (value) => margin.top + plotHeight - (value / yMax) * plotHeight;
+
+    let svg = `<title>${tr("chartTitle")}</title>`;
+    svg += `<line class="chart-baseline" x1="${margin.left}" y1="${yAt(0)}" x2="${width - margin.right}" y2="${yAt(0)}"></line>`;
+    svg += `<text class="chart-axis chart-axis-title" x="${margin.left}" y="20">${tr("machineUnits")}</text>`;
+
+    for (let tick = 1; tick <= yMax; tick += 1) {
+      const y = yAt(tick);
+      svg += `<line class="capacity-threshold" x1="${margin.left}" y1="${y}" x2="${width - margin.right}" y2="${y}"></line>`;
+      svg += `<text class="chart-axis" x="${margin.left - 12}" y="${y + 4}" text-anchor="end">${tick}</text>`;
+      svg += `<text class="threshold-label" x="${width - margin.right + 12}" y="${y + 4}">${tick} ${translatedPlural(tick, "machine", "machines")}</text>`;
+    }
+
+    plans.forEach((item, index) => {
+      let stack = 0;
+      engine.MACHINE_ORDER.slice().reverse().forEach((code) => {
+        const value = item.counts[code] || 0;
+        if (!value) return;
+        const yTop = yAt(stack + value);
+        const yBottom = yAt(stack);
+        svg += `<rect class="fleet-bar" x="${xAt(index) - barWidth / 2}" y="${yTop}" width="${barWidth}" height="${Math.max(0, yBottom - yTop)}" rx="3" fill="${COLORS[code]}"><title>${code}: ${value} installed</title></rect>`;
+        if (yBottom - yTop >= 24) {
+          const workloadY = yAt(item.allocation.usedEquivalentUnits);
+          const lowerPosition = yBottom - 12;
+          const upperPosition = yTop + 18;
+          const labelY = Math.abs(lowerPosition - workloadY) < 28 ? upperPosition : lowerPosition;
+          svg += `<text class="fleet-bar-label" x="${xAt(index)}" y="${labelY}" text-anchor="middle">${code}${value > 1 ? ` × ${value}` : ""}</text>`;
+        }
+        stack += value;
+      });
+      svg += `<text class="bar-value" x="${xAt(index)}" y="${Math.max(30, yAt(stack) - 10)}" text-anchor="middle">${stack}</text>`;
+      svg += `<text class="chart-axis phase-axis" x="${xAt(index)}" y="${height - 30}" text-anchor="middle">${tr(`phase${index + 1}`)}</text>`;
+      svg += `<text class="chart-axis" x="${xAt(index)}" y="${height - 12}" text-anchor="middle">Y${item.startYear}</text>`;
+    });
+
+    const linePoints = plans.map((item, index) => `${xAt(index)},${yAt(item.allocation.usedEquivalentUnits)}`).join(" ");
+    svg += `<polyline class="workload-line" points="${linePoints}"></polyline>`;
+    plans.forEach((item, index) => {
+      const x = xAt(index);
+      const y = yAt(item.allocation.usedEquivalentUnits);
+      const labelY = Math.min(height - margin.bottom - 12, Math.max(margin.top + 14, y + 24));
+      const lineLabel = formatPercent(item.allocation.utilization);
+      svg += `<circle class="workload-point" cx="${x}" cy="${y}" r="6"><title>${tr(`phase${index + 1}`)}: ${item.allocation.usedEquivalentUnits.toFixed(2)} · ${formatPercent(item.allocation.utilization)}</title></circle>`;
+      svg += `<rect class="workload-label-bg" x="${x - 31}" y="${labelY - 13}" width="62" height="19" rx="9"></rect>`;
+      svg += `<text class="workload-label" x="${x}" y="${labelY}" text-anchor="middle">${lineLabel}</text>`;
+    });
+    elements.fleetChart.innerHTML = svg;
+
+    elements.chartLegend.innerHTML = engine.MACHINE_ORDER.map((code) => {
+      return `<span class="legend-item"><span class="legend-swatch" style="background:${COLORS[code]}"></span>${code}</span>`;
+    }).join("") + `<span class="legend-item"><span class="legend-line"></span>${tr("occupiedCapacity")}</span>`;
+  }
+
+  function optionsInline(item) {
+    if (!item.openingOptions.length) return "—";
+    return item.openingOptions.map((option) => openingOptionText(option)).join(" · ");
+  }
+
+  function renderResults(recommended) {
+    elements.resultsBody.innerHTML = recommended.phasePlans.map((item, index) => {
+      const metrics = item.allocation.metrics;
+      const hasPurchase = sumCounts(item.purchases) > 0;
+      const focusClass = state.focus === String(index) ? "focus-row" : "";
+      const status = hasPurchase ? tr("addInY", { action: engine.countsLabel(item.purchases), year: item.startYear }) : tr("fleetSufficient");
+      return `<tr class="${focusClass}">
+        <th scope="row">${tr(`phase${index + 1}`)}</th>
+        <td>${periodLabel(index)}</td>
+        <td>${formatNumber(metrics.individualDemand)}</td>
+        <td>${formatNumber(metrics.collectiveDemand)}</td>
+        <td class="text-cell">${fleetChips(item.counts)}</td>
+        <td class="text-cell">${purchaseLabel(item.purchases, item.startYear, false)}</td>
+        <td><strong>${formatPercent(item.allocation.utilization)}</strong></td>
+        <td>${formatPercent(item.allocation.spareCapacity)}</td>
+        <td class="text-cell opening-cell">${optionsInline(item)}</td>
+        <td><span class="status-badge ${hasPurchase ? "buy" : ""}">${status}</span></td>
+      </tr>`;
+    }).join("");
+  }
+
+  function renderRationale(plan) {
+    const recommended = plan.recommended;
+    const phase1 = recommended.phasePlans[0];
+    const final = recommended.phasePlans[recommended.phasePlans.length - 1];
+    const purchasePhases = recommended.phasePlans.filter((item) => sumCounts(item.purchases) > 0);
+    const startsWithFinalFleet = engine.countsLabel(phase1.counts) === engine.countsLabel(final.counts);
+    elements.rationaleTitle.textContent = startsWithFinalFleet
+      ? tr("onePathTitle")
+      : tr("stagedPathTitle");
+    elements.rationaleBody.innerHTML = `<p>${tr("rationaleIntro")}</p>
+      <ul>
+        <li><strong>${recommended.finalUnits} ${translatedPlural(recommended.finalUnits, "physicalUnit", "physicalUnits")}</strong> ${tr("inFinalFleet")}</li>
+        <li><strong>${purchasePhases.length} ${translatedPlural(purchasePhases.length, "purchaseStage", "purchaseStages")}</strong> ${tr("overPlan")}</li>
+        <li><strong>${formatPercent(final.allocation.utilization)}</strong> ${tr("utilisationInPhase5")}</li>
+        <li>${tr("eachPhaseCovered")}</li>
+        <li>${tr("installedUseful")}</li>
+        <li>${tr("openingShown")}</li>
+        ${recommended.ft125BusinessPriority ? `<li><strong>FT125:</strong> ${tr("ft125PriorityText")}</li>` : ""}
+      </ul>
+      <p><strong>${tr("commercialResult")}</strong> ${tr("commercialResultText")}</p>`;
+  }
+
+  function renderAlternatives(plan) {
+    const alternatives = plan.alternatives.filter((item) => item.finalUnits === plan.minimumFinalUnits);
+    if (!alternatives.length) {
+      elements.alternativeList.innerHTML = `<div class="empty-alternatives"><strong>${tr("noEquivalent")}</strong><br>${tr("onlyMinimum")}</div>`;
+      return;
+    }
+    elements.alternativeList.innerHTML = alternatives.map((item, index) => {
+      const first = item.phasePlans.find((phase) => sumCounts(phase.purchases) > 0);
+      const finalPhase = item.phasePlans[item.phasePlans.length - 1];
+      const mixType = engine.MACHINE_ORDER.filter((code) => (item.finalFleet[code] || 0) > 0).length > 1 ? tr("mixedFleet") : tr("singleModelFleet");
+      return `<div class="alternative-card">
+        <span class="alternative-rank">${tr("alternative", { n: index + 1 })}</span>
+        <strong>${engine.countsLabel(item.finalFleet)}</strong>
+        <span>${mixType} · ${tr("start")}: ${engine.countsLabel(first ? first.counts : item.finalFleet)} · ${tr("utilInPhase5", { utilisation: formatPercent(finalPhase.allocation.utilization) })}</span>
+      </div>`;
+    }).join("");
+  }
+
+  function renderPlanHeader(recommended) {
+    const years = state.phases.reduce((sum, phase) => sum + engine.normalisePhase(phase).duration, 0);
+    const total = state.phases.reduce((sum, phase) => {
+      const clean = engine.normalisePhase(phase);
+      return sum + clean.volume * clean.duration;
+    }, 0);
+    elements.planSummary.textContent = tr("atMaturity", { fleet: engine.countsLabel(recommended.finalFleet, tr("noUnit")) });
+    elements.horizonSummary.textContent = tr("horizon", { years, total: formatNumber(total) });
+  }
+
+  function renderError(message) {
+    elements.recommendationHeading.innerHTML = `<h2>${tr("reviewAssumptions")}</h2><p>${message}</p>`;
+    elements.recommendationKpis.innerHTML = "";
+    elements.decisionCallout.textContent = tr("noFeasibleFleet");
+    elements.operatingNoteBody.innerHTML = `<div class="opening-empty"><strong>${tr("noResultAvailable")}</strong><span>${tr("reviewInputsFirst")}</span></div>`;
+    elements.phaseCards.innerHTML = "";
+    elements.fleetChart.innerHTML = "";
+    elements.resultsBody.innerHTML = "";
+    elements.alternativeList.innerHTML = "";
+    elements.clientReport.innerHTML = "";
+  }
+
+  function render() {
+    syncStateFromInputs(false);
+    updateComputedRows();
+    elements.focusPhase.value = state.focus;
+    const plan = engine.optimisePlan(state.phases, { maxUnits: 12, absoluteMaxUnits: 30 });
+    state.plan = plan;
+    if (!plan.feasible) {
+      renderError(plan.message);
+      return;
+    }
+    renderRecommendation(plan);
+    renderPlanHeader(plan.recommended);
+    renderPhaseCards(plan.recommended);
+    renderChart(plan.recommended);
+    renderResults(plan.recommended);
+    renderRationale(plan);
+    renderAlternatives(plan);
+    renderOpeningOptions(plan.recommended);
+    buildClientReport();
+  }
+
+  function resetInputs() {
+    state.phases = engine.DEFAULT_PHASES.map((phase) => ({ ...phase }));
+    state.focus = "global";
+    state.clientName = "";
+    elements.clientName.value = "";
+    buildInputTable();
+    render();
+  }
+
+  function reportHeader(generatedDate) {
+    const client = escapeHtml(state.clientName || tr("unnamedClient"));
+    return `<div class="report-header">
+      <div class="report-brand">
+        <div class="report-mark">FT</div>
+        <div><strong>PET Sizing Tool</strong><span>${tr("brandSubtitle")}</span></div>
+      </div>
+      <p class="report-meta">${tr("clientRecommendationReport")}<br>${tr("clientLabel", { name: client })}<br>${tr("generated", { date: generatedDate })}</p>
+    </div>`;
+  }
+
+  function buildClientReport() {
+    if (!state.plan || !state.plan.feasible) {
+      elements.clientReport.innerHTML = "";
+      return;
+    }
+
+    const plan = state.plan;
+    const recommended = plan.recommended;
+    const metrics = state.phases.map(engine.phaseMetrics);
+    const finalPhase = recommended.phasePlans[recommended.phasePlans.length - 1];
+    const horizonYears = metrics.reduce((sum, phase) => sum + phase.duration, 0);
+    const totalCremations = metrics.reduce((sum, phase) => sum + phase.volume * phase.duration, 0);
+    const generatedDate = new Intl.DateTimeFormat(LOCALES[state.language] || LOCALES.en, { day: "2-digit", month: "long", year: "numeric" }).format(new Date());
+    const chart = elements.fleetChart.outerHTML.replace('id="fleetChart"', 'class="report-chart"');
+
+    const assumptionRows = [
+      [tr("durationLabel"), metrics.map((item) => `${item.duration} ${translatedPlural(item.duration, "year", "years")}`)],
+      [tr("annualVolumeLabel"), metrics.map((item) => formatNumber(item.volume))],
+      [tr("individualCollective"), metrics.map((item) => `${decimalFormatter.format(item.individualShare)}% / ${decimalFormatter.format(100 - item.individualShare)}%`)],
+      [tr("individualVolumeLabel"), metrics.map((item) => formatNumber(item.individualDemand))],
+      [tr("collectiveVolumeLabel"), metrics.map((item) => formatNumber(item.collectiveDemand))],
+      [tr("openingTime"), metrics.map((item) => `${decimalFormatter.format(item.hours)} ${tr("hoursShort")}`)],
+      [tr("operatingDaysAvailability"), metrics.map((item) => `${formatNumber(item.days)} ${tr("daysPerYear").split("/")[0]} / ${decimalFormatter.format(item.availability)}%`)],
+      [tr("averagePetWeight"), metrics.map((item) => `${decimalFormatter.format(item.weight)} kg`)]
+    ].map(([label, values]) => `<tr><th>${label}</th>${values.map((value) => `<td>${value}</td>`).join("")}</tr>`).join("");
+
+    const phaseRows = recommended.phasePlans.map((item, index) => {
+      const allocation = item.allocation;
+      const purchase = sumCounts(item.purchases) > 0
+        ? purchaseLabel(item.purchases, item.startYear, false)
+        : tr("noPurchase");
+      const opening = item.openingOptions.length
+        ? item.openingOptions.slice(0, 2).map(openingOptionText).join("<br>")
+        : tr("notRequired");
+      return `<tr>
+        <th>${tr(`phase${index + 1}`)}<br><small>${periodLabel(index)}</small></th>
+        <td>${formatNumber(allocation.metrics.individualDemand)}</td>
+        <td>${formatNumber(allocation.metrics.collectiveDemand)}</td>
+        <td class="report-left"><strong>${engine.countsLabel(item.counts, "None")}</strong></td>
+        <td class="report-left">${purchase}</td>
+        <td>${formatPercent(allocation.utilization)}</td>
+        <td>${formatPercent(allocation.spareCapacity)}</td>
+        <td class="report-left">${opening}</td>
+      </tr>`;
+    }).join("");
+
+    const openingCards = recommended.phasePlans
+      .filter((item) => item.openingOptions.length > 0)
+      .map((item) => `<div class="report-card">
+        <h3>${tr(`phase${item.phaseIndex + 1}`)} - ${periodLabel(item.phaseIndex)}</h3>
+        <p>${item.openingOptions.slice(0, 3).map(openingOptionText).join("<br>")}</p>
+      </div>`).join("") || `<div class="report-card"><h3>${tr("noOpeningAlternative")}</h3><p>${tr("purchaseTimelineCapacity")}</p></div>`;
+
+    const alternatives = plan.alternatives
+      .filter((item) => item.finalUnits === plan.minimumFinalUnits)
+      .slice(0, 4)
+      .map((item, index) => {
+        const alternativeFinal = item.phasePlans[item.phasePlans.length - 1];
+        return `<li><strong>${tr("alternative", { n: index + 1 })}:</strong> ${engine.countsLabel(item.finalFleet)} - ${tr("utilInPhase5", { utilisation: formatPercent(alternativeFinal.allocation.utilization) })}.</li>`;
+      }).join("") || `<li>${tr("noEquivalentReport")}</li>`;
+
+    const header = reportHeader(generatedDate);
+    elements.clientReport.innerHTML = `
+      <section class="report-page">
+        ${header}
+        <h1 class="report-title">${tr("reportTitle")}</h1>
+        <p class="report-subtitle">${tr("reportSubtitle")}</p>
+        <div class="report-summary-grid">
+          <div class="report-kpi"><span>${tr("recommendedFinalFleet")}</span><strong>${engine.countsLabel(recommended.finalFleet, tr("noUnit"))}</strong><small>${recommended.finalUnits} ${translatedPlural(recommended.finalUnits, "physicalUnit", "physicalUnits")}</small></div>
+          <div class="report-kpi"><span>${tr("planningHorizon")}</span><strong>${horizonYears} ${translatedPlural(horizonYears, "year", "years")}</strong><small>${formatNumber(totalCremations)} ${tr("plannedCremations")}</small></div>
+          <div class="report-kpi"><span>${tr("phase5Utilisation")}</span><strong>${formatPercent(finalPhase.allocation.utilization)}</strong><small>${tr("acrossInstalledUnits")}</small></div>
+          <div class="report-kpi"><span>${tr("phase5Spare")}</span><strong>${formatPercent(finalPhase.allocation.spareCapacity)}</strong><small>${tr("underAssumptions")}</small></div>
+        </div>
+        <div class="report-callout"><strong>${tr("investmentPlanText", { schedule: investmentSchedule(recommended) })}</strong> ${tr("futurePhasesText")}</div>
+        <div class="report-section">
+          <h2>${tr("chartTitle")}</h2>
+          <div class="report-chart-wrap">${chart}</div>
+        </div>
+        <div class="report-section">
+          <h2>${tr("recommendedByPhase")}</h2>
+          <table class="report-table">
+            <thead><tr><th>${tr("phase")}</th><th>${tr("individualPerYear")}</th><th>${tr("collectivePerYear")}</th><th>${tr("installedFleet")}</th><th>${tr("purchase")}</th><th>${tr("utilisation")}</th><th>${tr("spare")}</th><th>${tr("openingAlternative")}</th></tr></thead>
+            <tbody>${phaseRows}</tbody>
+          </table>
+        </div>
+        <div class="report-footer">${tr("preparedBy")} Meniar Trabelsi - PET Sizing Tool</div>
+      </section>
+      <section class="report-page">
+        ${header}
+        <h1 class="report-title">${tr("assumptionsTitle")}</h1>
+        <p class="report-subtitle">${tr("assumptionsSubtitle")}</p>
+        <div class="report-section">
+          <h2>${tr("clientAssumptions")}</h2>
+          <table class="report-table">
+            <thead><tr><th>${tr("input")}</th>${metrics.map((_, index) => `<th>${tr(`phase${index + 1}`)}</th>`).join("")}</tr></thead>
+            <tbody>${assumptionRows}</tbody>
+          </table>
+        </div>
+        <div class="report-section report-two-column">
+          <div>
+            <h2>${tr("optionalOpeningScenarios")}</h2>
+            <div class="report-two-column">${openingCards}</div>
+          </div>
+          <div class="report-card">
+            <h3>${tr("otherMinimumFleets")}</h3>
+            <ul>${alternatives}</ul>
+          </div>
+        </div>
+        <div class="report-section report-two-column">
+          <div class="report-card">
+            <h3>${tr("recommendationLogic")}</h3>
+            <ul>
+              <li>${tr("logicCoverage")}</li>
+              <li>${tr("logicMinUnits")}</li>
+              <li>${tr("logicKeep")}</li>
+              <li>${tr("logicMachineYears")}</li>
+              <li>${tr("logicFt125")}</li>
+              <li>${tr("logicFit")}</li>
+            </ul>
+          </div>
+          <div class="report-card">
+            <h3>${tr("scopeTitle")}</h3>
+            <p>${tr("scopeText")}</p>
+          </div>
+        </div>
+        <div class="report-note"><strong>${tr("important")}</strong> ${tr("importantText")}</div>
+        <div class="report-footer">${tr("preparedBy")} Meniar Trabelsi - PET Sizing Tool</div>
+      </section>`;
+  }
+
+  function downloadClientPdf() {
+    if (!state.plan || !state.plan.feasible) return;
+    syncStateFromInputs(true);
+    render();
+    buildClientReport();
+    const previousTitle = document.title;
+    const clientSlug = (state.clientName || "Client").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 50) || "Client";
+    document.title = `PET_Fleet_Recommendation_${clientSlug}_${new Date().toISOString().slice(0, 10)}`;
+    const restoreTitle = () => { document.title = previousTitle; };
+    window.addEventListener("afterprint", () => {
+      restoreTitle();
+      window.setTimeout(render, 0);
+    }, { once: true });
+    window.print();
+  }
+
+  function refreshFromVisibleInputs() {
+    window.clearTimeout(renderTimer);
+    renderTimer = window.setTimeout(() => {
+      renderTimer = null;
+      syncStateFromInputs(false);
+      render();
+    }, 0);
+  }
+
+  elements.resetInputs.addEventListener("click", resetInputs);
+  elements.downloadPdf.addEventListener("click", downloadClientPdf);
+  elements.clientName.addEventListener("input", (event) => {
+    state.clientName = event.currentTarget.value.trim();
+    buildClientReport();
+  });
+  elements.languageSelect.addEventListener("change", (event) => {
+    syncStateFromInputs(false);
+    state.language = event.currentTarget.value;
+    updateFormatters();
+    applyStaticTranslations();
+    buildInputTable();
+    render();
+  });
+  elements.themeToggle.addEventListener("click", () => {
+    state.theme = state.theme === "dark" ? "light" : "dark";
+    document.documentElement.dataset.theme = state.theme;
+    renderThemeToggle();
+  });
+  window.addEventListener("beforeprint", () => {
+    syncStateFromInputs(true);
+    render();
+    buildClientReport();
+  });
+  window.addEventListener("pageshow", refreshFromVisibleInputs);
+  window.addEventListener("popstate", refreshFromVisibleInputs);
+  window.addEventListener("focus", refreshFromVisibleInputs);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") refreshFromVisibleInputs();
+  });
+  elements.focusPhase.addEventListener("change", (event) => {
+    syncStateFromInputs(false);
+    state.focus = event.currentTarget.value;
+    render();
+  });
+
+  document.documentElement.dataset.theme = state.theme;
+  applyStaticTranslations();
+  buildInputTable();
+  render();
+})();
+
+  </script>
+</body>
+</html>
